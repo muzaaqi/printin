@@ -4,9 +4,12 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        hostname: 'imgur.com'
-      }
-    ]
+        hostname: "imgur.com",
+      },
+      {
+        hostname: "lh3.googleusercontent.com",
+      },
+    ],
   },
 };
 
