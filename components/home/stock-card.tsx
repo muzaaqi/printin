@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
+import { Button } from '../ui/button';
 
 const StockCard = () => {
   return (
@@ -29,9 +30,9 @@ const StockCard = () => {
         <CardFooter>
           <Link
             href="#"
-            className="w-full px-4 py-2 bg-accent text-center text-accent-foreground rounded-lg font-medium"
+            className="w-full"
           >
-            Pesan
+            <Button className='w-full bg-background text-accent-foreground hover:bg-accent/90'>Pesan</Button>
           </Link>
         </CardFooter>
       </Card>
