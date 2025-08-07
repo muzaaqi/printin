@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 import {
   Card,
   CardContent,
@@ -8,15 +8,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { Button } from '../ui/button';
+import { Button } from "../ui/button";
 
 const StockCard = () => {
   return (
     <>
-      <Card className="w-full bg-accent-foreground shadow-md border-accent">
+      <Card className="w-full bg-card-foreground shadow-md border-muted-foreground">
         <CardHeader className="items-center text-center">
-          <CardTitle className="font-bold text-xl text-accent">Kertas A4</CardTitle>
-          <CardDescription></CardDescription>
+          <CardTitle className="font-bold text-xl text-accent">
+            Kertas A4
+          </CardTitle>
+          <CardDescription className="border-b border-muted-foreground"></CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center">
           <p className="text-3xl text-accent font-bold">
@@ -28,16 +30,15 @@ const StockCard = () => {
           </p>
         </CardContent>
         <CardFooter>
-          <Link
-            href="#"
-            className="w-full"
-          >
-            <Button className='w-full bg-background text-accent-foreground hover:bg-accent/90'>Pesan</Button>
+          <Link href="#" className="w-full">
+            <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+              Pesan
+            </Button>
           </Link>
         </CardFooter>
       </Card>
     </>
   );
-}
+};
 
-export default StockCard
+export default StockCard;

@@ -27,7 +27,7 @@ export default function Home() {
           </Link>
         </div>
       </div>
-      <div className="w-full bg-accent-foreground py-10">
+      <div className="w-full bg-foreground py-10">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">    
         <h2 className="text-3xl text-accent font-bold text-center mb-10 underline">
           Stok Kertas Tersedia
