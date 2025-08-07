@@ -3,6 +3,7 @@ import React from "react";
 import Profile from "@/components/header/profile";
 
 const Navbar = () => {
+  
   return (
     <div className="w-full sticky bg-background/10 top-0 backdrop-blur-md z-50 border-b border-accent-foreground/20">
       <div className="mx-auto flex justify-between items-center p-2">
