@@ -28,7 +28,7 @@ const StockCard = () => {
         </CardContent>
         <CardFooter>
           <Link
-            href="/print-order"
+            href="#"
             className="w-full px-4 py-2 bg-accent text-center text-accent-foreground rounded-lg font-medium"
           >
             Pesan
