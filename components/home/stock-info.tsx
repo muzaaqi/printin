@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent, CardFooter } from "../ui/card";
 
 const StockInfo = () => {
   return (
-    <div className="max-w-7xl mx-auto flex md:grid md:grid-cols-3 xl:grid-cols-4 md:gap-10 lg:gap-15 px-18 md:px-10 lg:px-20 flex-col items-center justify-center space-y-10 md:space-y-0">
+    <div className="max-w-7xl mx-auto flex sm:grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 sm:gap-5 md:gap-10 lg:gap-15 px-18 md:px-10 lg:px-20 flex-col items-center justify-center space-y-10 sm:space-y-0">
       <StockCard />
       <StockCard />
       <StockCard />
