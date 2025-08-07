@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { SignUpAction } from "./signup-actions";
+import { createSupabaseBrowserClient } from "@/utils/supabase/broswer-client";
 
 type SignUpFormState =
   | {
@@ -34,6 +35,15 @@ const initialState: SignUpFormState = {
 
 const SignUpPage = ({ className, ...props }: React.ComponentProps<"div">) => {
   const [state, formAction] = useActionState(SignUpAction, initialState);
+  const supabase = createSupabaseBrowserClient();
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`, // adjust if needed
+      },
+    });
+  };
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
@@ -49,7 +59,7 @@ const SignUpPage = ({ className, ...props }: React.ComponentProps<"div">) => {
               <form action={formAction}>
                 <div className="grid gap-6">
                   <div className="flex flex-col gap-4">
-                    <Button variant="outline" className="w-full">
+                    <Button onClick={signInWithGoogle} variant="outline" className="w-full">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
