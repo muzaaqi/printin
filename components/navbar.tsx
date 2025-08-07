@@ -4,7 +4,7 @@ import Profile from "./profile";
 
 const Navbar = () => {
   return (
-    <div className="w-full sticky top-0 backdrop-blur-md z-50 border-b-border">
+    <div className="w-full sticky bg-background/10 top-0 backdrop-blur-md z-50 border-b-border">
       <div className="mx-auto flex justify-between items-center p-2">
         <Link href="/" className="flex items-center text-2xl font-bold ml-2 sm:mr-9">
           <span className="text-zinc-400">NGE</span>
