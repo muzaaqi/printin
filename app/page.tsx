@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div className="">
-      <div className="flex flex-col items-center justify-center my-20 sm:my-36 lg:my-33">
+      <div className="flex flex-col items-center justify-center my-20 sm:my-36 lg:my-34">
         <div className="px-3 py-1 text-center rounded-lg bg-accent-foreground text-accent">
           <Link href="/" className="font-semibold">
             NGEPRINT.XYZ
