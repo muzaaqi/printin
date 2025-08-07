@@ -1,14 +1,14 @@
 import Link from "next/link";
 import React from "react";
 
-const Header = () => {
+const Navbar = () => {
   return (
-    <div className="w-full sticky top-0 bg-background/20 backdrop-blur-md z-50 border-b border-accent-foreground">
+    <div className="w-full sticky top-0 backdrop-blur-md z-50 border-b border-accent-foreground">
       <div className="mx-auto flex justify-between items-center p-2">
-        <div className="flex items-center text-2xl font-bold ml-2 sm:mr-9">
+        <Link href="/" className="flex items-center text-2xl font-bold ml-2 sm:mr-9">
           <span className="text-zinc-400">NGE</span>
           <span className="text-accent-foreground">PRINT</span>
-        </div>
+        </Link>
         <nav className="hidden md:flex">
           <ul className="flex items-center justify-center space-x-4 text-lg font-semibold text-accent-foreground">
             <li>
@@ -18,7 +18,7 @@ const Header = () => {
               <Link href="/services">Services</Link>
             </li>
             <li>
-              <Link href="/about">About</Link>
+              <Link href="/#about">About</Link>
             </li>
           </ul>
         </nav>
@@ -33,4 +33,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default Navbar;
