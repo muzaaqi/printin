@@ -27,7 +27,7 @@ const Profile = () => {
           <DropdownMenuItem>Profile</DropdownMenuItem>
           <DropdownMenuItem>Transaction</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuLabel>Prefference</DropdownMenuLabel>
+          <DropdownMenuLabel>Preference</DropdownMenuLabel>
           <DropdownMenuItem>
             <ModeToggle />
           </DropdownMenuItem>
