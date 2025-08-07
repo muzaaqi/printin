@@ -15,7 +15,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
@@ -44,16 +44,16 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname !== "/" &&
     request.nextUrl.pathname !== "/services" &&
     !request.nextUrl.pathname.startsWith("/signin") &&
-    !request.nextUrl.pathname.startsWith("/signup") &&
-    !request.nextUrl.pathname.startsWith("/auth/callback") &&
-    !request.nextUrl.pathname.startsWith("/auth/confirm") &&
-    !request.nextUrl.pathname.startsWith("/auth/forgot-password") &&
-    !request.nextUrl.pathname.startsWith("/auth/reset-password")
-
+    !request.nextUrl.pathname.startsWith("/signup")
   ) {
-    // no user, potentially respond by redirecting the user to the signin page
     const url = request.nextUrl.clone();
     url.pathname = "/signin";
+    return NextResponse.redirect(url);
+  }  else if (
+    user && request.nextUrl.pathname === "/signin" || request.nextUrl.pathname === "/signup"
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
