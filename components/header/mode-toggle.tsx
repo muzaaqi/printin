@@ -20,7 +20,7 @@ const ModeToggle = () => {
   };
 
   return (
-    <Button onClick={toggleTheme} variant="outline" className="w-full">
+    <button onClick={toggleTheme} className="w-full">
       {theme === "light" && (
         <div className="flex items-center space-x-2">
           <Sun className="h-[1.2rem] w-[1.2rem] transition-all" />
@@ -39,7 +39,7 @@ const ModeToggle = () => {
           <span className="text-popover-foreground font-normal">System</span>
         </div>
       )}
-    </Button>
+    </button>
   );
 };
 
