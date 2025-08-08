@@ -42,15 +42,16 @@ export async function updateSession(request: NextRequest) {
   if (
     !user &&
     request.nextUrl.pathname !== "/" &&
-    request.nextUrl.pathname !== "/services" &&
     !request.nextUrl.pathname.startsWith("/signin") &&
     !request.nextUrl.pathname.startsWith("/signup")
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/signin";
     return NextResponse.redirect(url);
-  }  else if (
-    user && request.nextUrl.pathname === "/signin" || request.nextUrl.pathname === "/signup"
+  } else if (
+    user &&
+    (request.nextUrl.pathname === "/signin" ||
+      request.nextUrl.pathname === "/signup")
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/";

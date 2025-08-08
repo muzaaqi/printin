@@ -1,5 +1,5 @@
 "use client";
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,59 +11,88 @@ import {
 import ModeToggle from "./mode-toggle";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/utils/supabase/broswer-client";
+import { User } from "@supabase/supabase-js";
+import Link from "next/link";
+import { Button } from "../ui/button";
+import { useRouter, usePathname } from "next/navigation";
 
-const Profile = () => {
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [name, setName] = useState<string>("");
+const Profile = ({ initialUser }: { initialUser: User | null }) => {
+  const [user, setUser] = useState<User | null>(initialUser);
+  const supabase = createSupabaseBrowserClient();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const signOutUser = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Sign out error:", error);
+    } else {
+      router.push("/signin");
+    }
+  };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const supabase = createSupabaseBrowserClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
-      if (user) {
-        setAvatarUrl(user.user_metadata?.avatar_url || null);
-        setName(user.user_metadata?.full_name || user.email || "User");
-      }
-    };
-
-    fetchUser();
-  }, []);
+    return () => subscription.unsubscribe();
+  }, [supabase]);
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger>
-          <div className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-foreground/10 transition-all duration-300">
-            <span className="text-lg font-semibold">{name}</span>
-            <div className="border-3 p-0.5 rounded-full hover:border-foreground transition-all duration-300">
-              {avatarUrl ? (
+      {user ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <div className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-foreground/10 transition-all duration-300">
+              <span className="text-lg font-semibold">
+                {user?.user_metadata?.display_name ||
+                  user?.user_metadata?.full_name ||
+                  "User"}
+              </span>
+              <div className="border-3 p-0.5 rounded-full hover:border-foreground transition-all duration-300">
                 <Image
-                  src={avatarUrl}
+                  src={
+                    user.user_metadata.avatar_url
+                      ? user.user_metadata.avatar_url
+                      : "/default_avatar.svg"
+                  }
                   width={40}
                   height={40}
                   alt="avatar"
                   className="rounded-full object-cover"
                 />
-              ) : (
-                <div className="bg-foreground w-10 h-10 rounded-full" />
-              )}
+              </div>
             </div>
-          </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>Profile</DropdownMenuItem>
-          <DropdownMenuItem>Transaction</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>Preference</DropdownMenuLabel>
-          <DropdownMenuItem>
-            <ModeToggle />
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem>Transaction</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={signOutUser}
+              className="text-destructive"
+            >
+              Log Out
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Preference</DropdownMenuLabel>
+            <DropdownMenuItem>
+              <ModeToggle />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <div className="w-1/3 flex items-center px-3 py-2 rounded-lg transition-all duration-300">
+          <Link href={pathname === "/signin" ? "/signup" : "/signin"}>
+            <Button className="text-lg font-semibold px-4 py-6">
+              {pathname === "/signin" ? "Sign Up" : "Sign In"}
+            </Button>
+          </Link>
+        </div>
+      )}
     </>
   );
 };

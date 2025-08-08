@@ -1,42 +1,18 @@
 "use server";
-import { signUpSchema } from "@/lib/schema/signup";
+import { SignUpFormData, } from "@/lib/schema/signup";
 import { createSupabaseServerClient } from "@/utils/supabase/server-client";
+import { redirect } from "next/navigation";
 
-
-type SignUpFormState =
-  | {
-      success: boolean;
-      errors?: {
-        email?: string[];
-        password?: string[];
-        confirmPassword?: string[];
-      };
-      message?: string;
-    } | undefined;
-
-export const SignUpAction = async (_state: SignUpFormState | undefined,
-  formData: FormData
-): Promise<SignUpFormState> => {
-  const parsed = signUpSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword"),
-  });
-
-  if (!parsed.success) {
-    const fieldErrors = parsed.error.flatten().fieldErrors;
-    return {
-      success: false,
-      errors: fieldErrors,
-    };
-  }
-
+export const SignUpAction = async ({ name, email, password }: SignUpFormData) => {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password,
+    email: email,
+    password: password,
     options: {
-      emailRedirectTo: `${origin}`,
+      data: {
+        display_name: name,
+        full_name: name,
+      },
     },
   });
 
@@ -46,4 +22,6 @@ export const SignUpAction = async (_state: SignUpFormState | undefined,
       message: error.message,
     };
   }
+
+  redirect("/signin");
 };
