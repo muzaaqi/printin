@@ -8,7 +8,7 @@ const StockInfo = () => {
       <StockCard />
       <StockCard />
       <StockCard />
-      <Card className="w-full h-full bg-card-foreground-foreground shadow-md border-muted-foreground text-center flex items-center justify-center">
+      <Card className="w-full h-full bg-card-foreground shadow-md border-muted-foreground text-center flex items-center justify-center">
         <CardHeader></CardHeader>
         <CardContent>
           <div className="text-center text-2xl font-bold text-accent">
