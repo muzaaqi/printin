@@ -5,16 +5,21 @@ import { createSupabaseServerClient } from "@/utils/supabase/server-client";
 
 const Navbar = async () => {
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return (
     <div className="w-full sticky bg-background/10 top-0 backdrop-blur-md z-50 border-b border-accent-foreground/20">
-      <div className="mx-auto flex justify-between items-center p-2">
-        <Link href="/" className="flex items-center text-2xl font-bold ml-2">
-          <span className="text-zinc-400">NGE</span>
-          <span className="text-popover-foreground">PRINT</span>
-        </Link>
-        <nav className="hidden md:flex">
-          <ul className="flex items-center justify-center space-x-4 text-lg font-semibold text-popover-foreground">
+      <div className="mx-auto flex items-center justify-between p-2 relative">
+        <div className="flex md:ml-4 items-center flex-shrink-0">
+          <Link href="/" className="flex items-center text-2xl font-bold ml-2">
+            <span className="text-zinc-400">NGE</span>
+            <span className="text-popover-foreground">PRINT</span>
+          </Link>
+        </div>
+
+        <nav className="absolute left-1/2 -translate-x-1/2">
+          <ul className="hidden md:flex items-center md:space-x-6 lg:space-x-10 text-lg font-semibold text-popover-foreground">
             <li>
               <Link href="/">Home</Link>
             </li>
@@ -26,7 +31,8 @@ const Navbar = async () => {
             </li>
           </ul>
         </nav>
-        <div>
+
+        <div className="flex items-center flex-shrink-0">
           <Profile initialUser={user} />
         </div>
       </div>

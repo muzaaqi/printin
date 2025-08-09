@@ -46,7 +46,7 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
         <DropdownMenu>
           <DropdownMenuTrigger>
             <div className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-foreground/10 transition-all duration-300">
-              <span className="text-lg font-semibold">
+              <span className="text-md md:text-lg font-semibold">
                 {user?.user_metadata?.display_name ||
                   user?.user_metadata?.full_name ||
                   "User"}
@@ -61,7 +61,7 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
                   width={40}
                   height={40}
                   alt="avatar"
-                  className="rounded-full object-cover"
+                  className="rounded-full object-cover w-[30px] h-[30px] md:w-[40px] md:h-[40px]"
                 />
               </div>
             </div>
@@ -70,7 +70,13 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Transaction</DropdownMenuItem>
+            {user?.user_metadata?.role === "admin" ? (
+              <Link href="/dashboard">
+                <DropdownMenuItem>Dashboard</DropdownMenuItem>
+              </Link>
+            ) : (
+              <DropdownMenuItem>Transaction</DropdownMenuItem>
+            )}
             <DropdownMenuItem
               onClick={signOutUser}
               className="text-destructive"
@@ -87,7 +93,7 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
       ) : (
         <div className="w-1/3 flex items-center px-3 py-2 rounded-lg transition-all duration-300">
           <Link href={pathname === "/signin" ? "/signup" : "/signin"}>
-            <Button className="text-lg font-semibold px-4 py-6">
+            <Button className="md:text-lg font-semibold px-4 py-2 md:py-5">
               {pathname === "/signin" ? "Sign Up" : "Sign In"}
             </Button>
           </Link>
