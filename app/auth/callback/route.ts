@@ -5,10 +5,8 @@ import { createSupabaseServerClient } from "@/utils/supabase/server-client";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  // if "next" is in param, use it as the redirect URL
   let next = searchParams.get("next") ?? "/";
   if (!next.startsWith("/")) {
-    // if "next" is not a relative URL, use the default
     next = "/";
   }
 
@@ -16,6 +14,15 @@ export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user && !user.user_metadata?.role) {
+        await supabase.auth.updateUser({
+          data: { role: "user" },
+        });
+      }
       const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === "development";
       if (isLocalEnv) {

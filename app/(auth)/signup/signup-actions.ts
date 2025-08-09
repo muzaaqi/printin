@@ -1,7 +1,6 @@
 "use server";
 import { SignUpFormData, } from "@/lib/schema/signup";
 import { createSupabaseServerClient } from "@/utils/supabase/server-client";
-import { redirect } from "next/navigation";
 
 export const SignUpAction = async ({ name, email, password }: SignUpFormData) => {
   const supabase = await createSupabaseServerClient();
@@ -12,6 +11,7 @@ export const SignUpAction = async ({ name, email, password }: SignUpFormData) =>
       data: {
         display_name: name,
         full_name: name,
+        role: "user",
       },
     },
   });
@@ -22,6 +22,4 @@ export const SignUpAction = async ({ name, email, password }: SignUpFormData) =>
       message: error.message,
     };
   }
-
-  redirect("/signin");
 };
