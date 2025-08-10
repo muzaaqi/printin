@@ -1,7 +1,11 @@
 import ServicesCard from "@/components/services/services-card";
-import React from "react";
+import { getServices } from "@/features/get-services";
 
-const ServicesPage = () => {
+
+const ServicesPage = async () => {
+
+  const services = await getServices();
+
   return (
     <div className="w-full items-center justify-center">
       <div className="lg:max-w-screen-xl mx-auto mt-10">
@@ -9,10 +13,10 @@ const ServicesPage = () => {
           <h1 className="text-3xl font-bold">Services</h1>
           <p>Choose one of our services!</p>
         </div>
-        <div className="sm:flex md:grid md:grid-cols-2 lg:grid-cols-3 px-4 sm:px-6 lg:px-8 py-10">
-          <ServicesCard />
-          <ServicesCard />
-          <ServicesCard />
+        <div className="flex sm:flex md:grid md:grid-cols-2 lg:grid-cols-3 px-4 sm:px-6 lg:px-8 py-10">
+          {services.map((service) => (
+            <ServicesCard key={service.id} service={service} />
+          ))}
         </div>
       </div>
     </div>
