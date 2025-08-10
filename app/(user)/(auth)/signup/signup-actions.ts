@@ -12,6 +12,7 @@ export const SignUpAction = async ({ name, email, password }: SignUpFormData) =>
         display_name: name,
         full_name: name,
         role: "user",
+        address: null,
       },
     },
   });

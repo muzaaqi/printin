@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 
 const SignIn = ({ className, ...props }: React.ComponentProps<"div">) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
   const router = useRouter();
   const {
     register,
@@ -35,6 +36,9 @@ const SignIn = ({ className, ...props }: React.ComponentProps<"div">) => {
     const result = await SignInAction(formData);
     if (result?.success === false) {
       setIsLoading(false);
+      if (result.message == "Invalid login credentials") {
+        setErrorMessage("Email atau password salah!");
+      }
       return result.message;
     }
     setIsLoading(false);
@@ -74,7 +78,7 @@ const SignIn = ({ className, ...props }: React.ComponentProps<"div">) => {
                         fill="currentColor"
                       />
                     </svg>
-                    Login with Google
+                    Sign In with Google
                   </Button>
                 </div>
                 <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
@@ -112,6 +116,11 @@ const SignIn = ({ className, ...props }: React.ComponentProps<"div">) => {
                       {errors.password && (
                         <span className="text-destructive text-sm">
                           {errors.password.message}
+                        </span>
+                      )}
+                      {errorMessage && (
+                        <span className="text-destructive text-sm text-center mt-2">
+                          {errorMessage}
                         </span>
                       )}
                     </div>

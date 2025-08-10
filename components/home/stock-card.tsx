@@ -38,7 +38,7 @@ const StockCard = ({ service }: StockCardProps) => {
           </p>
         </CardContent>
         <CardFooter>
-          <Link href="#" className="w-full">
+          <Link href="/services" className="w-full">
             <Button disabled={service.remainingStock === 0} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
               {service.remainingStock > 0 ? "Pesan" : "Habis"}
             </Button>

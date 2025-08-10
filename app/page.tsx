@@ -1,7 +1,6 @@
 import Navbar from "@/components/header/navbar";
 import StockInfo from "@/components/home/stock-info";
 import Link from "next/link";
-import Lanyard from "@/components/home/lanyard";
 
 export default function Home() {
   return (

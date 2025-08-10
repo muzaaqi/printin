@@ -1,9 +1,10 @@
 import ServicesCard from "@/components/services/services-card";
 import { getServices } from "@/features/get-services";
+import { getUserData } from "@/features/get-user-data";
 
 
 const ServicesPage = async () => {
-
+  const user = await getUserData();
   const services = await getServices();
 
   return (
@@ -15,7 +16,7 @@ const ServicesPage = async () => {
         </div>
         <div className="flex sm:flex md:grid md:grid-cols-2 lg:grid-cols-3 px-4 sm:px-6 lg:px-8 py-10">
           {services.map((service) => (
-            <ServicesCard key={service.id} service={service} />
+            <ServicesCard key={service.id} service={service} isAuthenticated={!!user} />
           ))}
         </div>
       </div>

@@ -45,12 +45,8 @@ const ProfilePage = async () => {
             <p className="text-muted-foreground">{user?.phone || "Unknown Phone"}</p>
           </div>
           <div className="flex justify-between gap-5">
-            <p>Tanggal Lahir</p>
-            <p className="text-muted-foreground">{user?.birthdate || "Unknown Birthdate"}</p>
-          </div>
-          <div className="flex justify-between gap-5">
             <p>Alamat</p>
-            <p className="text-muted-foreground">{user?.address || "Unknown Address"}</p>
+            <p className="text-muted-foreground">{user?.user_metadata?.address || "Unknown Address"}</p>
           </div>
           <div className="flex justify-between gap-5">
             <p>Bergabung Pada</p>

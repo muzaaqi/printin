@@ -1,5 +1,5 @@
-"use client"
-import React, {useState} from "react";
+"use client";
+import React, { useState } from "react";
 import Image from "next/image";
 import {
   Card,
@@ -13,9 +13,14 @@ import { Button } from "../ui/button";
 import CheckoutModal from "./checkout-modal";
 import type { Service } from "./type";
 
-const ServicesCard = (props: { service: Service }) => {
-  const { service } = props;
-  const [open, setOpen] = useState(false)
+const ServicesCard = ({
+  service,
+  isAuthenticated,
+}: {
+  service: Service;
+  isAuthenticated: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
 
   const formatIDR = (n: number | null) =>
     n == null ? "-" : `Rp ${n.toLocaleString("id-ID")}`;
@@ -81,13 +86,25 @@ const ServicesCard = (props: { service: Service }) => {
             </div>
           </CardContent>
           <CardFooter className="flex justify-center">
-            <Button disabled={service.remainingStock === 0} onClick={() => setOpen(true)} className="w-full">
-              {service.remainingStock > 0 ? "Checkout" : "Stok Habis"}
+            <Button
+              disabled={service.remainingStock === 0 || !isAuthenticated}
+              onClick={() => setOpen(true)}
+              className="w-full"
+            >
+              {service.remainingStock === 0
+                ? "Stok Habis"
+                : !isAuthenticated
+                ? "Sign In untuk Checkout"
+                : "Checkout"}
             </Button>
           </CardFooter>
         </Card>
       </div>
-      <CheckoutModal service={service} open={open} onClose={() => setOpen(false)} />
+      <CheckoutModal
+        service={service}
+        open={open}
+        onClose={() => setOpen(false)}
+      />
     </>
   );
 };
