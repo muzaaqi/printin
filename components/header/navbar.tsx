@@ -2,6 +2,7 @@ import Link from "next/link";
 import React from "react";
 import Profile from "@/components/header/profile";
 import { createSupabaseServerClient } from "@/utils/supabase/server-client";
+import { NavLinks } from "./nav-links";
 
 const Navbar = async () => {
   const supabase = await createSupabaseServerClient();
@@ -19,17 +20,7 @@ const Navbar = async () => {
         </div>
 
         <nav className="absolute left-1/2 -translate-x-1/2">
-          <ul className="hidden md:flex items-center md:space-x-6 lg:space-x-10 text-lg font-semibold text-popover-foreground">
-            <li>
-              <Link href="/">Home</Link>
-            </li>
-            <li>
-              <Link href="/services">Services</Link>
-            </li>
-            <li>
-              <Link href="/#about">About</Link>
-            </li>
-          </ul>
+          <NavLinks />
         </nav>
 
         <div className="flex items-center flex-shrink-0">

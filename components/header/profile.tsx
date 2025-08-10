@@ -44,13 +44,13 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
     <>
       {user ? (
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <div className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-foreground/10 transition-all duration-300">
-              <span className="text-md md:text-lg font-semibold">
-                {user?.user_metadata?.display_name ||
-                  user?.user_metadata?.full_name ||
-                  "User"}
-              </span>
+          <div className="flex items-center space-x-2 px-3 py-2 rounded-lg">
+            <span className="text-md md:text-lg font-semibold">
+              {user?.user_metadata?.display_name ||
+                user?.user_metadata?.full_name ||
+                "User"}
+            </span>
+            <DropdownMenuTrigger>
               <div className="border-3 p-0.5 rounded-full hover:border-foreground transition-all duration-300">
                 <Image
                   src={
@@ -64,18 +64,20 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
                   className="rounded-full object-cover w-[30px] h-[30px] md:w-[40px] md:h-[40px]"
                 />
               </div>
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
+            </DropdownMenuTrigger>
+          </div>
+          <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <Link href="/me">
+              <DropdownMenuItem>Profile</DropdownMenuItem>
+            </Link>
             {user?.user_metadata?.role === "admin" ? (
               <Link href="/dashboard">
                 <DropdownMenuItem>Dashboard</DropdownMenuItem>
               </Link>
             ) : (
-              <DropdownMenuItem>Transaction</DropdownMenuItem>
+              <DropdownMenuItem>Riwayat</DropdownMenuItem>
             )}
             <DropdownMenuItem
               onClick={signOutUser}
@@ -84,7 +86,7 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
               Log Out
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Preference</DropdownMenuLabel>
+            <DropdownMenuLabel>Tampilan</DropdownMenuLabel>
             <DropdownMenuItem>
               <ModeToggle />
             </DropdownMenuItem>
