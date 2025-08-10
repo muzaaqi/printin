@@ -1,9 +1,12 @@
+import Navbar from "@/components/header/navbar";
 import StockInfo from "@/components/home/stock-info";
 import Link from "next/link";
+import Lanyard from "@/components/home/lanyard";
 
 export default function Home() {
   return (
     <div className="">
+      <Navbar />
       <div className="flex flex-col items-center justify-center my-20 sm:my-36 lg:my-34">
         <div className="px-3 py-1 text-center rounded-lg bg-accent-foreground text-accent">
           <Link href="/" className="font-semibold">
@@ -21,18 +24,18 @@ export default function Home() {
         <div className="mt-20">
           <Link
             href="/services"
-            className="text-accent text-2xl font-semibold px-4 py-2 rounded-lg bg-accent-foreground"
+            className="text-accent text-2xl font-semibold px-4 py-2 rounded-lg bg-accent-foreground hover:bg-accent-foreground/90 hover:shadow-lg transition-all duration-300"
           >
             Let&apos;s Print It!
           </Link>
         </div>
       </div>
       <div className="w-full bg-foreground py-10">
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">    
-        <h2 className="text-3xl text-accent font-bold text-center mb-10 underline">
-          Stok Kertas Tersedia
-        </h2>
-        <StockInfo />
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl text-accent font-bold text-center mb-10 underline">
+            Stok Kertas Tersedia
+          </h2>
+          <StockInfo />
         </div>
       </div>
       <div
@@ -41,11 +44,8 @@ export default function Home() {
       >
         <div className="max-w-screen-xl px-4 py-2 text-center">
           <h2 className="text-3xl font-bold text-accent-foreground">About</h2>
-          <p className="mt-2">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Error
-            quaerat unde aliquam sed inventore temporibus ipsum voluptate, fugit
-            porro laboriosam? Nostrum rem itaque et ut ad ab fugiat quae
-            laudantium.
+          <p>
+            NGEPRINT.XYZ is your go-to solution for online printing needs. We offer a wide range of printing services, from documents to photos, all at your fingertips.
           </p>
         </div>
       </div>
