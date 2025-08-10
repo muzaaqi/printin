@@ -71,7 +71,7 @@ export const checkoutSchema = z
 
     notes: z
       .string()
-      .max(500, "Catatan maksimal 500 karakter")
+      .max(150, "Catatan maksimal 150 karakter")
       .optional()
       .or(z.literal("")),
 
