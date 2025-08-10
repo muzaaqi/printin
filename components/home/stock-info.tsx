@@ -1,13 +1,23 @@
 import React from "react";
 import StockCard from "./stock-card";
 import { Card, CardHeader, CardContent, CardFooter } from "../ui/card";
+import { getServices } from "@/features/get-services";
 
-const StockInfo = () => {
+type StockCardProps = {
+  service: {
+    id: string;
+    name: string;
+    remainingStock: number;
+  };
+};
+
+const StockInfo = async () => {
+  const services = await getServices();
   return (
     <div className="max-w-7xl mx-auto flex sm:grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 sm:gap-5 md:gap-10 lg:gap-15 px-18 md:px-10 lg:px-20 flex-col items-center justify-center space-y-10 sm:space-y-0">
-      <StockCard />
-      <StockCard />
-      <StockCard />
+      {services.map((service) => (
+        <StockCard key={service.id} service={service} />
+      ))}
       <Card className="w-full h-full bg-card-foreground shadow-md border-muted-foreground text-center flex items-center justify-center">
         <CardHeader></CardHeader>
         <CardContent>
