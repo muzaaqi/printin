@@ -9,28 +9,22 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "../ui/button";
+import { Paper } from "@/features/get-paper-sheets-realtime";
 
-type StockCardProps = {
-  service: {
-    id: string;
-    serviceName: string;
-    remainingStock: number;
-  };
-};
 
-const StockCard = ({ service }: StockCardProps) => {
+const StockCard = ({ paper }: { paper: Paper }) => {
   return (
     <>
       <Card className="w-full bg-card-foreground shadow-md border-muted-foreground">
         <CardHeader className="items-center text-center">
           <CardTitle className="font-bold text-xl text-accent">
-            {service.serviceName}
+            {paper.brand}
           </CardTitle>
-          <CardDescription className="border-b border-muted-foreground"></CardDescription>
+          <CardDescription className="border-b border-muted-foreground">{paper.size} - {paper.type}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center">
-          <p className={`text-3xl ${service.remainingStock > 10 ? "text-accent" : "text-destructive"} font-bold`}>
-            {service.remainingStock}
+          <p className={`text-3xl ${paper.remainingSheets > 10 ? "text-accent" : "text-destructive"} font-bold`}>
+            {paper.remainingSheets}
             <span className="text-sm font-medium text-muted-foreground">
               {" "}
               lbr
@@ -39,8 +33,8 @@ const StockCard = ({ service }: StockCardProps) => {
         </CardContent>
         <CardFooter>
           <Link href="/services" className="w-full">
-            <Button disabled={service.remainingStock === 0} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-              {service.remainingStock > 0 ? "Pesan" : "Habis"}
+            <Button disabled={paper.remainingSheets === 0} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+              {paper.remainingSheets > 0 ? "Pesan" : "Habis"}
             </Button>
           </Link>
         </CardFooter>
