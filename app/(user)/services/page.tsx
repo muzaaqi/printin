@@ -1,12 +1,10 @@
 import ServicesCard from "@/components/services/services-card";
-import { getServices } from "@/features/get-services";
-import { getUserData } from "@/features/get-user-data";
-
+import { getCurrentUser } from "@/features/get-current-user";
+import { getAllServices } from "@/features/get-all-services";
 
 const ServicesPage = async () => {
-  const user = await getUserData();
-  const services = await getServices();
-
+  const user = await getCurrentUser();
+  const services = await getAllServices();
   return (
     <div className="w-full items-center justify-center">
       <div className="lg:max-w-screen-xl mx-auto mt-10">
@@ -16,7 +14,11 @@ const ServicesPage = async () => {
         </div>
         <div className="flex sm:flex md:grid md:grid-cols-2 lg:grid-cols-3 px-4 sm:px-6 lg:px-8 py-10">
           {services.map((service) => (
-            <ServicesCard key={service.id} service={service} isAuthenticated={!!user} />
+            <ServicesCard
+              key={service.id}
+              service={service}
+              isAuthenticated={!!user}
+            />
           ))}
         </div>
       </div>

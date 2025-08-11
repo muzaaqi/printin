@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getTransactionByUserId } from "@/features/get-transaction";
+import { getTransactionByUserId } from "@/features/get-transaction-by-user-id";
 import { Button } from "../ui/button";
 import { History } from "lucide-react";
 
@@ -36,25 +36,25 @@ const HistoryCard = async () => {
             <Card key={transaction.id}>
               <CardHeader>
                 <CardTitle className="text-xl">
-                  {transaction.services.serviceName}
+                  {transaction.services.name}
                 </CardTitle>
                 <CardDescription>
                   {formatDate(transaction.created_at)}
                 </CardDescription>
                 <CardAction
                   className={`${
-                    transaction.paymentStatus === "Pending"
+                    transaction.payment_status === "Pending"
                       ? "text-yellow-500 bg-yellow-50 px-2 py-1 rounded-md"
                       : "text-green-500 bg-green-50 px-2 py-1 rounded-md"
                   }`}
                 >
-                  {transaction.paymentStatus}
+                  {transaction.payment_status}
                 </CardAction>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between">
                   <p className="font-semibold">Ukuran Kertas:</p>
-                  <p>{transaction.services.paperSize}</p>
+                  <p>{transaction.services.papers?.size}</p>
                 </div>
                 <div className="flex justify-between">
                   <p className="font-semibold">Jumlah Halaman:</p>
@@ -66,24 +66,24 @@ const HistoryCard = async () => {
                 </div>
                 <div className="flex justify-between">
                   <p className="font-semibold">Warna:</p>
-                  <p>{transaction.color}</p>
+                  <p>{transaction.services.color}</p>
                 </div>
                 <div className="flex justify-between">
                   <p className="font-semibold">Sisi:</p>
-                  <p>{transaction.side}</p>
+                  <p>{transaction.services.duplex}</p>
                 </div>
                 <div className="flex justify-between border-b">
                   <p className="font-semibold">Metode Pembayaran:</p>
-                  <p>{transaction.paymentMethod}</p>
+                  <p>{transaction.payment_method}</p>
                 </div>
                 <div className="flex justify-between">
                   <p className="font-semibold">Total Harga:</p>
-                  <p>{formatIDR(transaction.totalPrice)}</p>
+                  <p>{formatIDR(transaction.total_price)}</p>
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button variant="outline">Detail</Button>
-                {transaction.paymentStatus === "Pending" ? (
+                {transaction.payment_status === "Pending" ? (
                   <Button>Bayar Sekarang</Button>
                 ) : (
                   <h2>Pesanan Selesai</h2>

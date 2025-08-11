@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { getUserData } from "@/features/get-user-data";
+import { getUserData } from "@/features/get-current-user";
 import { Button } from "@/components/ui/button";
 
 const ProfilePage = async () => {
@@ -32,25 +32,35 @@ const ProfilePage = async () => {
           />
         </div>
         <div className="mt-4 text-center">
-          <h2 className="text-lg font-semibold">{user?.user_metadata?.full_name || "Unknown User"}</h2>
+          <h2 className="text-lg font-semibold">
+            {user?.user_metadata?.full_name || "Unknown User"}
+          </h2>
           <Button className="text-xs mt-2">Edit Profile</Button>
         </div>
         <div className="w-full mt-4 space-y-2 border p-3 rounded-md">
           <div className="flex justify-between gap-5">
             <p>Email</p>
-            <p className="text-muted-foreground">{user?.email || "Unknown Email"}</p>
+            <p className="text-muted-foreground">
+              {user?.email || "Unknown Email"}
+            </p>
           </div>
           <div className="flex justify-between gap-5">
             <p>Telepon</p>
-            <p className="text-muted-foreground">{user?.phone || "Unknown Phone"}</p>
+            <p className="text-muted-foreground">
+              {user?.phone || "Unknown Phone"}
+            </p>
           </div>
           <div className="flex justify-between gap-5">
             <p>Alamat</p>
-            <p className="text-muted-foreground">{user?.user_metadata?.address || "Unknown Address"}</p>
+            <p className="text-muted-foreground">
+              {user?.user_metadata?.address || "Unknown Address"}
+            </p>
           </div>
           <div className="flex justify-between gap-5">
             <p>Bergabung Pada</p>
-            <p className="text-muted-foreground">{formatDate(user?.created_at) || "Unknown Join Date"}</p>
+            <p className="text-muted-foreground">
+              {formatDate(user?.created_at) || "Unknown Join Date"}
+            </p>
           </div>
         </div>
       </div>

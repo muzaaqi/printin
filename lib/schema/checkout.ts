@@ -25,49 +25,20 @@ export const checkoutSchema = z
         return file.size <= 50 * 1024 * 1024;
       }, "Ukuran file maksimal 50MB"),
 
-    color: z.enum(["Hitam-Putih", "Berwarna"], {
-      message: "Pilihan warna wajib dipilih"
-    }),
-
-    side: z.enum(["Satu-Sisi", "Dua-Sisi"], {
-      message: "Pilihan sisi wajib dipilih"
-    }),
-
     pages: z
       .number("Jumlah halaman wajib diisi")
       .min(1, "Jumlah halaman wajib diisi")
       .refine((val) => val >= 1, "Jumlah halaman minimal 1")
       .refine((val) => val <= 1000, "Jumlah halaman maksimal 1000"),
 
-    date: z
-  .string()
-  .min(1, "Tanggal dan waktu wajib diisi")
-  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Format tanggal & waktu tidak valid (YYYY-MM-DDTHH:MM)")
-  // Validasi tanggal minimal hari ini
-  .refine((dateStr) => {
-    const selectedDateTime = new Date(dateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return selectedDateTime >= today;
-  }, "Tanggal tidak boleh kurang dari hari ini")
-  // Validasi tanggal maksimal 30 hari dari sekarang
-  .refine((dateStr) => {
-    const selectedDateTime = new Date(dateStr);
-    const maxDate = new Date();
-    maxDate.setDate(maxDate.getDate() + 30);
-    return selectedDateTime <= maxDate;
-  }, "Tanggal maksimal 30 hari dari sekarang")
-  // Validasi waktu antara jam 08:00 - 17:00
-  .refine((dateStr) => {
-    const selectedDateTime = new Date(dateStr);
-    const hours = selectedDateTime.getHours();
-    const minutes = selectedDateTime.getMinutes();
-    const totalMinutes = hours * 60 + minutes;
-    const minMinutes = 8 * 60;  // 08:00
-    const maxMinutes = 17 * 60; // 17:00
-    return totalMinutes >= minMinutes && totalMinutes <= maxMinutes;
-  }, "Waktu harus antara jam 08:00 - 17:00"),
-
+    datePart: z
+      .string()
+      .min(1, "Tanggal wajib")
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal yyyy-mm-dd"),
+    timePart: z
+      .string()
+      .min(1, "Waktu wajib")
+      .regex(/^\d{2}:\d{2}(:\d{2})?$/, "Format waktu HH:MM"),
 
     notes: z
       .string()
@@ -110,6 +81,17 @@ export const checkoutSchema = z
       message: "Bukti pembayaran wajib diupload untuk metode QRIS",
       path: ["qris"],
     }
-  );
+  )
+  .superRefine((val, ctx) => {
+  const time = val.timePart.length === 5 ? val.timePart + ":00" : val.timePart;
+  const isoSource = `${val.datePart}T${time}`;
+  const d = new Date(isoSource);
+  if (isNaN(d.getTime())) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["datePart"], message: "Tanggal/Waktu tidak valid" });
+  }
+  if (d.getTime() < Date.now()) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["datePart"], message: "Tidak boleh waktu lampau" });
+  }
+});
 
 export type CheckoutSchema = z.infer<typeof checkoutSchema>;
