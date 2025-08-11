@@ -1,5 +1,11 @@
 "use client";
-import React, { useEffect, useRef, useState, useCallback,DragEvent } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  DragEvent,
+} from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -9,15 +15,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// import { Calendar } from "@/components/ui/calendar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import Image from "next/image";
 import { CheckoutSchema, checkoutSchema } from "@/lib/schema/checkout";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Upload, FileCheck } from "lucide-react";
-import type { Service } from "./type";
+import { Upload, FileCheck, Ban, Check } from "lucide-react";
 import { X } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
+import { Service } from "@/features/get-all-services";
+import { toast } from "sonner";
 
 const ACCEPTED_MIME_TYPES = [
   "application/pdf",
@@ -38,8 +62,9 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dateOpen, setDateOpen] = React.useState(false);
+  const [calendarDate, setCalendarDate] = useState<Date | undefined>(undefined);
   const [sheets, setSheets] = useState<number | null>(null);
-  const [basePrice, setBasePrice] = useState<number | null>(null);
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,6 +73,8 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
     mode: "onChange",
     defaultValues: {
       notes: "",
+      datePart: "",
+      timePart: "10:30:00",
     },
   });
 
@@ -56,7 +83,6 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
     setUploadedFile(null);
     setIsDragOver(false);
     setQris(false);
-    setBasePrice(null);
     setTotalPrice(null);
     onClose();
   }, [form, onClose]);
@@ -66,14 +92,30 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
       form.setError("file", { message: "File wajib diunggah" });
       return;
     }
+
+    const rawTime = (data.timePart || "").trim();
+    const time = rawTime
+      ? rawTime.length === 5
+        ? `${rawTime}:00`
+        : rawTime
+      : "00:00:00";
+    const isoNeededAt = data.datePart
+      ? new Date(`${data.datePart}T${time}`).toISOString()
+      : "";
+
+    if (isoNeededAt && isNaN(new Date(isoNeededAt).getTime())) {
+      form.setError("datePart", { message: "Tanggal/Waktu tidak valid" });
+      return;
+    }
+
     const fd = new FormData();
     fd.append("serviceId", service.id);
-    fd.append("color", data.color);
-    fd.append("side", data.side);
+    fd.append("paperId", service.paper_id);
     fd.append("pages", String(data.pages));
     fd.append("sheets", String(sheets));
-    fd.append("neededAt", data.date ? new Date(data.date).toISOString() : "");
+    fd.append("neededAt", isoNeededAt);
     fd.append("notes", data.notes || "");
+    fd.append("price", String(service.price || 0));
     fd.append("paymentMethod", data.payment);
     fd.append("file", uploadedFile);
     if (data.payment === "Qris" && data.qris && data.qris.length > 0) {
@@ -86,12 +128,15 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
     const json = await res.json();
     if (!res.ok) {
       console.error(json.error);
+      setIsSubmitting(false);
+      form.reset();
+      toast.error("Transaksi gagal");
       return;
     }
     // sukses: reset
-    form.reset();
-    setUploadedFile(null);
     setIsSubmitting(false);
+    resetAndClose();
+    toast.success("Transaksi berhasil");
   };
 
   const handleFileSelect = (file: File) => {
@@ -146,37 +191,16 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
     n == null ? "-" : `Rp ${n.toLocaleString("id-ID")}`;
 
   // Gunakan watch agar reaktif
-  const color = form.watch("color");
-  const side = form.watch("side");
   const pages = form.watch("pages");
 
   // Effect hitung harga
   useEffect(() => {
-    if (!service.prices) {
-      setBasePrice(null);
+    if (!service.price) {
       setTotalPrice(null);
       return;
     }
 
-    // Tentukan key harga
-    let priceKey: keyof Service["prices"] | null = null;
-    if (color === "Hitam-Putih" && side === "Satu-Sisi")
-      priceKey = "priceSingleSide";
-    else if (color === "Hitam-Putih" && side === "Dua-Sisi")
-      priceKey = "priceDoubleSides";
-    else if (color === "Berwarna" && side === "Satu-Sisi")
-      priceKey = "priceColorSingleSide";
-    else if (color === "Berwarna" && side === "Dua-Sisi")
-      priceKey = "priceColorDoubleSides";
-
-    if (!priceKey) {
-      setBasePrice(null);
-      setTotalPrice(null);
-      return;
-    }
-
-    const unit = Number(service.prices?.[priceKey]) || 0;
-    setBasePrice(unit);
+    const unit = Number(service.price) || 0;
 
     const pageCount =
       typeof pages === "number"
@@ -186,14 +210,10 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
         : 0;
 
     if (pageCount > 0) {
-      if (
-        priceKey === "priceDoubleSides" ||
-        priceKey === "priceColorDoubleSides"
-      ) {
-        // Bagi 2 dan bulatkan ke atas
-        const pageDoubleSides = Math.ceil(pageCount / 2);
-        const sheetCount = pageDoubleSides;
-        setSheets(pageDoubleSides);
+      if (service.duplex) {
+        const pageDuplex = Math.ceil(pageCount / 2);
+        const sheetCount = pageDuplex;
+        setSheets(pageDuplex);
         setTotalPrice(unit * sheetCount);
       } else {
         setSheets(pageCount);
@@ -202,14 +222,20 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
     } else {
       setTotalPrice(null);
     }
-  }, [color, side, pages, service.prices]);
+
+  }, [pages, service.price, service.duplex]);
 
   if (!open) return null;
 
   return (
     <div className="fixed w-full bg-foreground/20 dark:bg-background/0 inset-0 z-50 2xl:flex backdrop-blur-md mx-auto items-center justify-center overflow-auto">
       <div className="relative max-w-screen-xl mx-auto md:px-10 bg-popover xl:border py-10 xl:rounded-lg">
-        <button className="absolute top-4 right-4 cursor-pointer text-muted-foreground hover:text-accent-foreground" onClick={resetAndClose}>
+        <button
+          type="button"
+          disabled={isSubmitting}
+          className="absolute top-4 right-4 cursor-pointer text-muted-foreground hover:text-accent-foreground"
+          onClick={resetAndClose}
+        >
           <X className="" />
         </button>
         <div className="grid items-center justify-center">
@@ -217,10 +243,11 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
             Checkout
           </h1>
           <h2 className="text-muted-foreground text-md mx-auto">
-            {service.serviceName}
+            {service.name}
           </h2>
         </div>
         <form
+          id="checkout-form"
           onSubmit={form.handleSubmit(onSubmit)}
           className="rounded-lg mt-5 px-5 md:px-0 md:h-svh xl:h-auto"
         >
@@ -308,75 +335,31 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
               onChange={handleFileInputChange}
             />
           </div>
-          <div className="mx-auto grid md:grid-cols-2 gap-5 md:gap-10">
+          <div className="mx-auto md:grid lg:grid-cols-2 gap-5 lg:gap-10">
             <div className="space-y-3">
               <div className="mx-auto items-center flex flex-col space-y-3">
-                <div className="w-full grid grid-cols-2 gap-5">
-                  <div className="space-y-3">
-                    <Label>Warna</Label>
-                    <Controller
-                      name="color"
-                      control={form.control}
-                      render={({ field }) => (
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Opsi Warna" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Hitam-Putih">
-                              Hitam Putih
-                            </SelectItem>
-                            <SelectItem value="Berwarna">Berwarna</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    {form.formState.errors.color && (
-                      <span className="text-destructive">
-                        {form.formState.errors.color.message}
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    <Label>Sisi</Label>
-                    <Controller
-                      name="side"
-                      control={form.control}
-                      render={({ field }) => (
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Opsi Sisi" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Satu-Sisi">Satu Sisi</SelectItem>
-                            <SelectItem value="Dua-Sisi">Dua Sisi</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    {form.formState.errors.side && (
-                      <span className="text-destructive">
-                        {form.formState.errors.side.message}
-                      </span>
-                    )}
-                  </div>
+                <div className="w-full grid grid-cols-3 gap-5 text-sm md:text-md">
+                    <div className="w-full text-center justify-start">
+                      <span className="font-semibold">Ukuran Kertas</span> <p>{service.papers?.size}</p>
+                    </div>
+                    <div className="w-full text-center justify-center border-x">
+                      <span className="font-semibold">Berwarna</span> <p>{service.color ? <Check size={16} className="inline text-emerald-400" /> : <Ban size={16} className="inline text-destructive" />}</p>
+                    </div>
+                    <div className="w-full text-center justify-end">
+                      <span className="font-semibold">Bolak Balik</span> <p>{service.duplex ? <Check size={16} className="inline text-emerald-400" /> : <Ban size={16} className="inline text-destructive" />}</p>
+                    </div>
                 </div>
-                <div className="w-full grid grid-cols-2 gap-5">
+
+                <div className="w-full space-y-3 md:grid grid-cols-2 gap-5 border-t pt-3">
                   <div className="space-y-3">
                     <Label>Jumlah Halaman</Label>
                     <Input
                       {...form.register("pages", { valueAsNumber: true })}
                       type="number"
-                      id="page"
+                      id="pages"
                       min={1}
-                      max={service.remainingStock}
-                      placeholder={`Tersisa ${service.remainingStock.toLocaleString()}`}
+                      max={service.papers?.sheets}
+                      placeholder={`Tersisa ${service.papers?.sheets.toLocaleString()}`}
                     />
                     {form.formState.errors.pages && (
                       <span className="text-destructive">
@@ -385,17 +368,70 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                     )}
                   </div>
                   <div className="space-y-3">
-                    <Label>Tanggal dibutuhkan</Label>
-                    <Input
-                      type="datetime-local"
-                      className="justify-center md:justify-between px-2 text-sm text-muted-foreground"
-                      {...form.register("date")}
-                    />
-                    {form.formState.errors.date && (
-                      <span className="text-destructive">
-                        {form.formState.errors.date.message}
-                      </span>
-                    )}
+                    <div className="flex gap-4">
+                      <div className="flex flex-col gap-3 w-full">
+                        <Label htmlFor="date-picker" className="px-1">
+                          Tanggal
+                        </Label>
+                        <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              id="date-picker"
+                              className="justify-between font-normal w-full"
+                            >
+                              {form.watch("datePart") || "Pilih tanggal"}
+                              <ChevronDownIcon />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-auto overflow-hidden p-0"
+                            align="start"
+                          >
+                            <Calendar
+                              mode="single"
+                              selected={calendarDate}
+                              captionLayout="dropdown"
+                              onSelect={(d) => {
+                                setCalendarDate(d);
+                                if (d) {
+                                  const iso = d.toISOString(); // yyyy-mm-ddTHH:MM:SSZ
+                                  const yyyyMmDd = iso.slice(0, 10);
+                                  form.setValue("datePart", yyyyMmDd, {
+                                    shouldDirty: true,
+                                    shouldValidate: true,
+                                  });
+                                }
+                                setDateOpen(false);
+                              }}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {form.formState.errors.datePart && (
+                          <span className="text-destructive text-xs">
+                            {form.formState.errors.datePart.message}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-3 w-full">
+                        <Label htmlFor="time-picker" className="px-1">
+                          Waktu
+                        </Label>
+                        <Input
+                          {...form.register("timePart")}
+                          type="time"
+                          id="time-picker"
+                          step="60"
+                          defaultValue="10:30:00"
+                          className="bg-background w-full appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                        />
+                        {form.formState.errors.timePart && (
+                          <span className="text-destructive text-xs">
+                            {form.formState.errors.timePart.message}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -480,7 +516,7 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                   />
                 </div>
               ) : (
-                <div className="w-full h-[300px] overflow-auto text-accent-foreground/90 border border-destructive/30 bg-destructive/10 rounded-md py-3 px-4">
+                <div className="w-full lg:h-[300px] overflow-auto text-accent-foreground/90 border border-destructive/30 bg-destructive/10 rounded-md py-3 px-4 md:mb-20 lg:mb-0">
                   <h1 className="text-lg font-semibold justify-self-center">
                     Informasi Pembayaran
                   </h1>
@@ -506,9 +542,9 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                 </div>
               )}
               <div className="md:absolute md:bottom-1 w-full space-y-2">
-                <div className="flex w-full justify-between border-b">
+                <div className="flex w-full justify-between pb-1 border-b">
                   <h2>Harga perlembar: </h2>
-                  <h2 className="font-semibold">{formatIDR(basePrice)}</h2>
+                  <h2 className="font-semibold">{formatIDR(service.price)}</h2>
                 </div>
                 <div className="flex justify-between">
                   <h2 className="text-md font-semibold">Harga Total: </h2>
@@ -517,17 +553,43 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
               </div>
             </div>
           </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild className="w-full">
+              <Button
+                type="button"
+                variant={"secondary"}
+                className="w-full my-5"
+                disabled={isSubmitting}
+              >
+                Kembali
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Apakah kamu yakin?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Semua data kamu masukkan akan terhapus dari form ini.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction asChild>
+                  <Button type="button" onClick={resetAndClose}>
+                    Kembali
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button
-            variant={"secondary"}
-            onClick={resetAndClose}
-            className="w-full my-5"
+            variant={"default"}
+            type="submit"
+            disabled={service.papers?.sheets === 0 || isSubmitting}
+            className="w-full"
           >
-            Cancel
-          </Button>
-          <Button disabled={service.remainingStock === 0} className="w-full">
             {isSubmitting
               ? "Sedang Diproses..."
-              : service.remainingStock > 0
+              : service.papers?.sheets > 0
               ? "Pesan"
               : "Stok Habis"}
           </Button>

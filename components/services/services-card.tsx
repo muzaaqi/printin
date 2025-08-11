@@ -11,7 +11,7 @@ import {
 } from "../ui/card";
 import { Button } from "../ui/button";
 import CheckoutModal from "./checkout-modal";
-import type { Service } from "./type";
+import { Service } from "@/features/get-all-services";
 
 const ServicesCard = ({
   service,
@@ -30,23 +30,24 @@ const ServicesCard = ({
         <Card className="w-full">
           <CardHeader className="flex flex-col items-center">
             <Image
-              src={service.imageUrl}
+              src={service.image_url}
               width={200}
               height={200}
-              alt={service.serviceName}
+              alt={service.name}
             />
             <CardTitle className="text-2xl text-center">
-              {service.serviceName}
+              {service.name}
             </CardTitle>
+            <CardDescription>{service.papers?.size} - {service.papers?.type}</CardDescription>
             <CardDescription
               className={`${
-                service.remainingStock <= 10
+                service.papers?.sheets <= 10
                   ? "bg-destructive"
                   : "bg-accent-foreground"
               } text-accent font-semibold px-2 py-1 rounded-md`}
             >
-              {service.remainingStock
-                ? `${service.remainingStock} Tersisa`
+              {service.papers?.sheets
+                ? `${service.papers?.sheets} Tersisa`
                 : "Habis"}
             </CardDescription>
           </CardHeader>
@@ -56,30 +57,30 @@ const ServicesCard = ({
                 Harga
               </CardTitle>
               <div className="flex justify-between items-center border-b">
-                <p>B&W - 1 Sisi</p>
+                <p>Ukuran Kertas</p>
                 <p className="font-semibold">
-                  {formatIDR(service.prices["priceSingleSide"])}
-                  <span className="text-muted-foreground">/lbr</span>
+                  {service.papers?.size}
+                  <span className="text-muted-foreground"></span>
                 </p>
               </div>
               <div className="flex justify-between items-center border-b">
-                <p>B&W - 2 Sisi</p>
+                <p>Berwarna</p>
                 <p className="font-semibold">
-                  {formatIDR(service.prices["priceDoubleSides"])}
-                  <span className="text-muted-foreground">/lbr</span>
+                  {service.color ? "Ya" : "Tidak"}
+                  <span className="text-muted-foreground"></span>
                 </p>
               </div>
               <div className="flex justify-between items-center border-b">
-                <p>Warna - 1 Sisi</p>
+                <p>Bolak Balik</p>
                 <p className="font-semibold">
-                  {formatIDR(service.prices["priceColorSingleSide"])}
-                  <span className="text-muted-foreground">/lbr</span>
+                  {service.duplex ? "Ya" : "Tidak"}
+                  <span className="text-muted-foreground"></span>
                 </p>
               </div>
               <div className="flex justify-between items-center">
-                <p>Warna - 2 Sisi</p>
+                <p>Harga</p>
                 <p className="font-semibold">
-                  {formatIDR(service.prices["priceColorDoubleSides"])}
+                  {formatIDR(service.price)}
                   <span className="text-muted-foreground">/lbr</span>
                 </p>
               </div>
@@ -87,11 +88,11 @@ const ServicesCard = ({
           </CardContent>
           <CardFooter className="flex justify-center">
             <Button
-              disabled={service.remainingStock === 0 || !isAuthenticated}
+              disabled={service.papers?.sheets === 0 || !isAuthenticated}
               onClick={() => setOpen(true)}
               className="w-full"
             >
-              {service.remainingStock === 0
+              {service.papers?.sheets === 0
                 ? "Stok Habis"
                 : !isAuthenticated
                 ? "Sign In untuk Checkout"
