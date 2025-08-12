@@ -1,16 +1,59 @@
-import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/utils/supabase/server-client"; // sesuaikan util Anda
+import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/utils/supabase/server-client";
 
-export async function POST(req: Request) {
+// Tambahkan config untuk Next.js 15
+export const runtime = "nodejs";
+export const maxDuration = 30; // 30 seconds timeout
+
+export async function POST(req: NextRequest) {
+  let supabase;
+
   try {
-    const supabase = await createSupabaseServerClient();
+    // Early size check sebelum parsing FormData
+    const contentLength = req.headers.get("content-length");
+    if (contentLength && parseInt(contentLength) > 60 * 1024 * 1024) {
+      // 60MB max
+      return NextResponse.json(
+        { error: "File terlalu besar (maksimal 60MB)" },
+        { status: 413 },
+      );
+    }
+
+    supabase = await createSupabaseServerClient();
+
+    // Auth check dengan better error handling
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
-    if (!user)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Authentication failed" },
+        { status: 401 },
+      );
+    }
 
-    const form = await req.formData();
+    // Parse FormData dengan timeout protection
+    let form: FormData;
+    try {
+      form = await Promise.race([
+        req.formData(),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("FormData parsing timeout")),
+            15000,
+          ),
+        ),
+      ]);
+    } catch (parseError) {
+      console.error("FormData parsing error:", parseError);
+      return NextResponse.json(
+        { error: "Gagal memproses data form" },
+        { status: 400 },
+      );
+    }
+
+    // Extract and validate form data
     const serviceId = form.get("serviceId") as string;
     const paperId = form.get("paperId") as string;
     const pages = Number(form.get("pages"));
@@ -22,108 +65,246 @@ export async function POST(req: Request) {
     const file = form.get("file") as File | null;
     const receipt = form.get("receipt") as File | null;
 
-    if (!paperId || !file || !pages)
+    // Validate required fields
+    if (!serviceId || !paperId || !file || !pages) {
       return NextResponse.json(
-        { error: "Data tidak lengkap" },
-        { status: 400 }
+        {
+          error:
+            "Data tidak lengkap: serviceId, paperId, file, dan pages wajib diisi",
+        },
+        { status: 400 },
       );
+    }
 
-    // Ambil papers
+    // Validate file size and type
+    if (file.size > 50 * 1024 * 1024) {
+      // 50MB
+      return NextResponse.json(
+        { error: "File terlalu besar (maksimal 50MB)" },
+        { status: 400 },
+      );
+    }
+
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+      "image/jpeg",
+      "image/png",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: "Tipe file tidak didukung" },
+        { status: 400 },
+      );
+    }
+
+    // Validate numbers
+    if (isNaN(pages) || pages < 1 || pages > 1000) {
+      return NextResponse.json(
+        { error: "Jumlah halaman harus antara 1-1000" },
+        { status: 400 },
+      );
+    }
+
+    if (isNaN(sheets) || sheets < 1) {
+      return NextResponse.json(
+        { error: "Jumlah lembar tidak valid" },
+        { status: 400 },
+      );
+    }
+
+    // Get paper data dengan error handling
     const { data: papersRow, error: papersErr } = await supabase
       .from("papers")
       .select("id, sheets")
       .eq("id", paperId)
       .single();
 
-    if (papersErr || !papersRow)
+    if (papersErr) {
+      console.error("Papers query error:", papersErr);
       return NextResponse.json(
-        { error: "Papers tidak ditemukan" },
-        { status: 404 }
+        { error: "Gagal mengambil data kertas" },
+        { status: 500 },
       );
+    }
 
-    if (pages < 1)
-      return NextResponse.json({ error: "Pages minimal 1" }, { status: 400 });
-    if (pages > papersRow.sheets)
+    if (!papersRow) {
       return NextResponse.json(
-        { error: "Pages melebihi stok" },
-        { status: 400 }
+        { error: "Kertas tidak ditemukan" },
+        { status: 404 },
       );
+    }
 
-    const basePrice = Number(price) || 0;
-    const totalPrice = basePrice * sheets;
+    // Check stock
+    if (sheets > papersRow.sheets) {
+      return NextResponse.json(
+        { error: `Stok tidak cukup. Tersedia: ${papersRow.sheets} lembar` },
+        { status: 400 },
+      );
+    }
 
-    // Upload file dokumen
-    const docPath = `${user.id}/${user.user_metadata.full_name}-${file.name}`;
+    const totalPrice = (Number(price) || 0) * sheets;
+
+    // Parse needed date/time
+    let neededDate: string | null = null;
+    let neededTime: string | null = null;
+
+    if (neededAt && neededAt.trim() !== "") {
+      try {
+        const date = new Date(neededAt);
+        if (!isNaN(date.getTime())) {
+          neededDate = date.toISOString().split("T")[0]; // YYYY-MM-DD
+          neededTime = date.toTimeString().split(" ")[0]; // HH:MM:SS
+        }
+      } catch (dateError) {
+        console.error("Date parsing error:", dateError);
+        // Continue without setting date/time if parsing fails
+      }
+    }
+
+    // Upload main file
+    const timestamp = Date.now();
+    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+    const docPath = `${user.id}/${timestamp}-${sanitizedFileName}`;
+
     const { error: upErr } = await supabase.storage
       .from("transactions-files")
-      .upload(docPath, file, { upsert: false });
-    if (upErr)
-      return NextResponse.json({ error: "Gagal upload file" }, { status: 500 });
+      .upload(docPath, file, {
+        upsert: false,
+        contentType: file.type,
+      });
+
+    if (upErr) {
+      console.error("File upload error:", upErr);
+      return NextResponse.json(
+        { error: "Gagal mengupload file dokumen" },
+        { status: 500 },
+      );
+    }
 
     const fileUrl = supabase.storage
       .from("transactions-files")
       .getPublicUrl(docPath).data.publicUrl;
 
-    // Upload bukti (opsional)
+    // Upload receipt if needed
     let receiptUrl: string | null = null;
     if (paymentMethod === "Qris" && receipt) {
-      const rPath = `${user.id}/${user.user_metadata.full_name}-${
-        receipt.name
-      }-${crypto.randomUUID()}`;
+      if (receipt.size > 5 * 1024 * 1024) {
+        // 5MB for receipts
+        return NextResponse.json(
+          { error: "Bukti pembayaran terlalu besar (maksimal 5MB)" },
+          { status: 400 },
+        );
+      }
+
+      const sanitizedReceiptName = receipt.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const rPath = `${user.id}/${timestamp}-receipt-${sanitizedReceiptName}`;
+
       const { error: rErr } = await supabase.storage
         .from("transactions-receipts")
-        .upload(rPath, receipt, { upsert: false });
-      if (rErr)
+        .upload(rPath, receipt, {
+          upsert: false,
+          contentType: receipt.type,
+        });
+
+      if (rErr) {
+        console.error("Receipt upload error:", rErr);
+        // Delete uploaded document if receipt fails
+        await supabase.storage.from("transactions-files").remove([docPath]);
         return NextResponse.json(
-          { error: "Gagal upload bukti" },
-          { status: 500 }
+          { error: "Gagal mengupload bukti pembayaran" },
+          { status: 500 },
         );
+      }
+
       receiptUrl = supabase.storage
         .from("transactions-receipts")
         .getPublicUrl(rPath).data.publicUrl;
     }
 
-    // Insert transaksi
+    // Insert transaction
+    const insertData = {
+      user_id: user.id,
+      user_name:
+        user.user_metadata?.full_name ||
+        user.user_metadata?.display_name ||
+        user.email?.split("@")[0],
+      user_email: user.email,
+      user_phone: user.user_metadata?.phone || null,
+      user_avatar: user.user_metadata?.avatar_url || null,
+      service_id: serviceId,
+      paper_id: paperId,
+      file_url: fileUrl,
+      pages,
+      sheets,
+      needed_date: neededDate,
+      needed_time: neededTime,
+      notes: notes.substring(0, 150), // Ensure max length
+      payment_method: paymentMethod,
+      receipt_url: receiptUrl,
+      total_price: totalPrice,
+      status: "Pending",
+      payment_status: paymentMethod === "Qris" ? "Paid" : "Pending",
+    };
+
     const { data: inserted, error: insErr } = await supabase
       .from("transactions")
-      .insert({
-        user_id: user.id,
-        service_id: serviceId,
-        paper_id: paperId,
-        file_url: fileUrl,
-        pages,
-        sheets,
-        needed_at: neededAt,
-        notes,
-        payment_method: paymentMethod,
-        receipt_url: receiptUrl,
-        total_price: totalPrice,
-        status: "Pending",
-        payment_status: paymentMethod === "Qris" ? "Paid" : "Pending",
-      });
+      .insert(insertData)
+      .select()
+      .single();
 
-    if (insErr)
+    if (insErr) {
+      console.error("Transaction insert error:", insErr);
+
+      // Cleanup uploaded files on database error
+      await supabase.storage.from("transactions-files").remove([docPath]);
+      if (receiptUrl) {
+        const receiptPath = receiptUrl.split("/").pop();
+        if (receiptPath) {
+          await supabase.storage
+            .from("transactions-receipts")
+            .remove([receiptPath]);
+        }
+      }
+
       return NextResponse.json(
-        { error: "Gagal simpan transaksi" },
-        { status: 500 }
+        { error: "Gagal menyimpan transaksi ke database" },
+        { status: 500 },
       );
+    }
 
-    await supabase
+    // Update stock
+    const { error: stockErr } = await supabase
       .from("papers")
       .update({ sheets: papersRow.sheets - sheets })
       .eq("id", paperId);
 
+    if (stockErr) {
+      console.error("Stock update error:", stockErr);
+      // Log error but don't fail the transaction
+      // Consider implementing a background job to retry stock updates
+    }
+
     return NextResponse.json(
-      { success: true, data: inserted },
-      { status: 201 }
+      {
+        success: true,
+        data: inserted,
+        message: "Transaksi berhasil disimpan",
+      },
+      { status: 201 },
     );
   } catch (error: unknown) {
+    console.error("API Route Error:", error);
+
     const message =
-      error instanceof Error
-        ? error.message || "Server error"
-        : typeof error === "string"
-        ? error
-        : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+      error instanceof Error ? error.message : "Terjadi kesalahan server";
+
+    return NextResponse.json(
+      { error: `Server error: ${message}` },
+      { status: 500 },
+    );
   }
 }
