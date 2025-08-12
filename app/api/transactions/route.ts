@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
     const paperId = form.get("paperId") as string;
     const pages = Number(form.get("pages"));
     const sheets = Number(form.get("sheets"));
-    const neededAt = form.get("neededAt") as string | null;
+    const neededDate = form.get("neededDate") as string | null;
+    const neededTime = form.get("neededTime") as string | null;
     const notes = (form.get("notes") as string) || "";
     const price = Number(form.get("price")) || 0;
     const paymentMethod = form.get("paymentMethod") as "Cash" | "Qris";
@@ -148,20 +149,23 @@ export async function POST(req: NextRequest) {
 
     const totalPrice = (Number(price) || 0) * sheets;
 
-    // Parse needed date/time
-    let neededDate: string | null = null;
-    let neededTime: string | null = null;
+    // Date/time validation (optional - will be handled by form later)
+    if (neededDate && neededTime) {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      const timeRegex = /^\d{2}:\d{2}(:\d{2})?$/;
 
-    if (neededAt && neededAt.trim() !== "") {
-      try {
-        const date = new Date(neededAt);
-        if (!isNaN(date.getTime())) {
-          neededDate = date.toISOString().split("T")[0]; // YYYY-MM-DD
-          neededTime = date.toTimeString().split(" ")[0]; // HH:MM:SS
-        }
-      } catch (dateError) {
-        console.error("Date parsing error:", dateError);
-        // Continue without setting date/time if parsing fails
+      if (!dateRegex.test(neededDate)) {
+        return NextResponse.json(
+          { error: "Format tanggal harus YYYY-MM-DD" },
+          { status: 400 },
+        );
+      }
+
+      if (!timeRegex.test(neededTime)) {
+        return NextResponse.json(
+          { error: "Format waktu harus HH:MM atau HH:MM:SS" },
+          { status: 400 },
+        );
       }
     }
 
