@@ -32,75 +32,57 @@ function adapt(row: PaperRow): Paper {
 
 type PapersMap = Map<string, Paper>;
 
-export const subscribePaper = async (
-  onChange: (papers: Paper[]) => void
+export const subscribePapers = async (
+  onChange: (papers: Paper[]) => void,
 ): Promise<() => void> => {
   const client = createSupabaseBrowserClient();
 
-  const { data: sessionData, error: sessionError } =
-    await client.auth.getSession();
-  if (sessionError) throw new Error(sessionError.message);
-  client.realtime.setAuth(sessionData.session?.access_token);
-
   const papersMap: PapersMap = new Map();
+  let initialDataLoaded = false;
 
-  const { data: initialRows, error: initialError } = await client
+  // 1. Load initial data
+  const { data: initialRows, error } = await client
     .from("papers")
     .select("id, size, type, sheets, brand, price")
     .order("sheets", { ascending: true });
 
-  if (initialError) {
-    throw new Error(initialError.message);
-  }
+  if (error) throw new Error(error.message);
 
-  if (initialRows) {
-    for (const row of initialRows as PaperRow[]) {
-      papersMap.set(row.id, adapt(row));
-    }
+  for (const row of (initialRows ?? []) as PaperRow[]) {
+    papersMap.set(row.id, adapt(row));
   }
-
+  initialDataLoaded = true;
   onChange(Array.from(papersMap.values()));
 
+  // 2. Subscribe realtime
   const channel = client
     .channel("public:papers")
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "papers" },
       (payload: RealtimePostgresChangesPayload<PaperRow>) => {
-        switch (payload.eventType) {
-          case "INSERT":
-          case "UPDATE": {
-            if (payload.new) {
-              papersMap.set(payload.new.id, adapt(payload.new));
-            }
-            break;
+        if (!initialDataLoaded) return;
+
+        if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+          if (payload.new) {
+            papersMap.set(payload.new.id, adapt(payload.new));
           }
-          case "DELETE": {
-            if (payload.old && payload.old.id) {
-              papersMap.delete(payload.old.id);
-            }
-            break;
+        } else if (payload.eventType === "DELETE") {
+          if (payload.old && payload.old.id) {
+            papersMap.delete(payload.old.id);
           }
         }
+
         onChange(Array.from(papersMap.values()));
-      }
+      },
     )
     .subscribe((status, err) => {
-      if (err) {
-        console.error("Realtime subscription error:", err);
-      }
-      if (status === "SUBSCRIBED") {
-      }
+      if (err) console.error("Realtime error:", err);
     });
 
-  const { data: authListener } = client.auth.onAuthStateChange(
-    (_event, session) => {
-      client.realtime.setAuth(session?.access_token);
-    }
-  );
-
+  // 3. Cleanup
   return () => {
     channel.unsubscribe();
-    authListener.subscription.unsubscribe();
   };
-}
+};
+
