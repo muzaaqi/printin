@@ -1,10 +1,10 @@
 import React from "react";
 import Image from "next/image";
-import { getUserData } from "@/features/get-current-user";
+import { getCurrentUser } from "@/features/get-current-user";
 import { Button } from "@/components/ui/button";
 
 const ProfilePage = async () => {
-  const user = await getUserData();
+  const user = await getCurrentUser();
   const formatDate = (iso?: string) => {
     if (!iso) return "Unknown";
     const d = new Date(iso);
@@ -16,13 +16,13 @@ const ProfilePage = async () => {
     });
   };
   return (
-    <div className="max-w-md mx-auto flex flex-col items-center space-y-10">
+    <div className="mx-auto flex max-w-md flex-col items-center space-y-10">
       <div className="mt-10 text-center">
         <h1 className="text-2xl font-bold">Profile</h1>
         <p className="text-muted-foreground">Customize Your Profile!</p>
       </div>
-      <div className="w-full flex flex-col items-center justify-center border rounded-md p-10">
-        <div className="border-2 rounded-full p-1">
+      <div className="flex w-full flex-col items-center justify-center rounded-md border p-10">
+        <div className="rounded-full border-2 p-1">
           <Image
             src={user?.user_metadata?.avatar_url || "/default_avatar.svg"}
             width={100}
@@ -35,9 +35,9 @@ const ProfilePage = async () => {
           <h2 className="text-lg font-semibold">
             {user?.user_metadata?.full_name || "Unknown User"}
           </h2>
-          <Button className="text-xs mt-2">Edit Profile</Button>
+          <Button className="mt-2 text-xs">Edit Profile</Button>
         </div>
-        <div className="w-full mt-4 space-y-2 border p-3 rounded-md">
+        <div className="mt-4 w-full space-y-2 rounded-md border p-3">
           <div className="flex justify-between gap-5">
             <p>Email</p>
             <p className="text-muted-foreground">

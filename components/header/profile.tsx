@@ -44,14 +44,14 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
     <>
       {user ? (
         <DropdownMenu>
-          <div className="flex items-center space-x-2 px-3 py-2 rounded-lg">
-            <span className="text-md md:text-lg font-semibold">
+          <div className="flex items-center space-x-2 rounded-lg px-3 py-2">
+            <span className="text-md font-semibold md:text-lg">
               {user?.user_metadata?.display_name ||
                 user?.user_metadata?.full_name ||
                 "User"}
             </span>
             <DropdownMenuTrigger>
-              <div className="border-3 p-0.5 rounded-full hover:border-foreground transition-all duration-300">
+              <div className="hover:border-foreground rounded-full border-3 p-0.5 transition-all duration-300">
                 <Image
                   src={
                     user.user_metadata.avatar_url
@@ -61,12 +61,12 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
                   width={40}
                   height={40}
                   alt="avatar"
-                  className="rounded-full object-cover w-[30px] h-[30px] md:w-[40px] md:h-[40px]"
+                  className="h-[30px] w-[30px] rounded-full object-cover md:h-[40px] md:w-[40px]"
                 />
               </div>
             </DropdownMenuTrigger>
           </div>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent className="backdrop-blur-md bg-background/50" align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <Link href="/me">
@@ -93,9 +93,9 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <div className="w-1/3 flex items-center px-3 py-2 rounded-lg transition-all duration-300">
+        <div className="flex w-1/3 items-center rounded-lg px-3 py-2 transition-all duration-300">
           <Link href={pathname === "/signin" ? "/signup" : "/signin"}>
-            <Button className="md:text-lg font-semibold px-4 py-2 md:py-5">
+            <Button className="px-4 py-2 font-semibold md:py-5 md:text-lg">
               {pathname === "/signin" ? "Sign Up" : "Sign In"}
             </Button>
           </Link>

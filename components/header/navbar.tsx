@@ -10,10 +10,10 @@ const Navbar = async () => {
     data: { user },
   } = await supabase.auth.getUser();
   return (
-    <div className="w-full sticky bg-background/10 top-0 backdrop-blur-md z-50 border-b border-accent-foreground/20">
-      <div className="mx-auto flex items-center justify-between p-2 relative">
-        <div className="flex md:ml-4 items-center flex-shrink-0">
-          <Link href="/" className="flex items-center text-2xl font-bold ml-2">
+    <div className="bg-background/10 border-accent-foreground/20 sticky top-0 z-50 w-full border-b backdrop-blur-md">
+      <div className="relative mx-auto flex items-center justify-between p-2">
+        <div className="flex flex-shrink-0 items-center md:ml-4">
+          <Link href="/" className="ml-2 flex items-center text-2xl font-bold">
             <span className="text-zinc-400">NGE</span>
             <span className="text-popover-foreground">PRINT</span>
           </Link>
@@ -23,7 +23,7 @@ const Navbar = async () => {
           <NavLinks />
         </nav>
 
-        <div className="flex items-center flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center">
           <Profile initialUser={user} />
         </div>
       </div>
