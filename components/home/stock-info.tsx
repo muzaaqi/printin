@@ -2,18 +2,18 @@
 import React, { useState, useEffect } from "react";
 import StockCard from "./stock-card";
 import {
-  PaperSheets,
-  subscribePaperRemainingSheets,
-} from "@/features/get-paper-sheets-realtime";
+  Paper,
+  subscribePapers,
+} from "@/features/get-all-papers-realtime";
 
 const StockInfo = () => {
-  const [papers, setPapers] = useState<PaperSheets[]>([]);
+  const [papers, setPapers] = useState<Paper[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let unsub: (() => void) | undefined;
 
-    subscribePaperRemainingSheets((next) => {
+    subscribePapers((next) => {
       setPapers(next);
       setLoading(false);
     }).then((u) => (unsub = u));

@@ -7,7 +7,7 @@ import React, { useEffect, useState } from "react";
 import TransactionCard from "./transaction-card";
 
 const TransactionCards = () => {
-  const [transaction, setTransaction] = useState<Transaction[]>([]);
+  const [transactions, setTransaction] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,13 +30,13 @@ const TransactionCards = () => {
             <h1 className="mb-8 text-center text-3xl font-bold"></h1>
             <div className="text-md text-center">Memuat transaksi...</div>
           </>
-        ) : transaction.length === 0 ? (
+        ) : transactions.length === 0 ? (
           <div className="text-md text-center">Tidak ada transaksi.</div>
         ) : null}
       </div>
       <div className="overflow-x-auto">
         <div className="flex w-max gap-8">
-          {transaction.map((transaction) => (
+          {transactions.map((transaction) => (
             <TransactionCard key={transaction.id} transaction={transaction} />
           ))}
         </div>

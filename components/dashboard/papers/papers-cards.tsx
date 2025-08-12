@@ -1,5 +1,5 @@
 "use client"
-import { Paper, subscribePaper } from "@/features/get-all-papers-realtime";
+import { Paper, subscribePapers } from "@/features/get-all-papers-realtime";
 import React, { useState, useEffect } from "react";
 import PapersCard from "./papers-card";
 
@@ -11,7 +11,7 @@ const PapersCards = () => {
   useEffect(() => {
     let unsub: (() => void) | undefined;
 
-    subscribePaper((next) => {
+    subscribePapers((next) => {
       setPapers(next);
       setLoading(false);
     }).then((u) => (unsub = u));

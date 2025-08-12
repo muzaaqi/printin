@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "../ui/button";
-import { PaperSheets } from "@/features/get-paper-sheets-realtime";
+import { Paper } from "@/features/get-all-papers-realtime";
 
-const StockCard = ({ paper }: { paper: PaperSheets }) => {
+const StockCard = ({ paper }: { paper: Paper }) => {
   return (
     <>
       <Card className="bg-card-foreground border-muted-foreground w-full shadow-md">
