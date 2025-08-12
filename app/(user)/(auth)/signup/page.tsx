@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 const SignUpPage = ({ className, ...props }: React.ComponentProps<"div">) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +40,9 @@ const SignUpPage = ({ className, ...props }: React.ComponentProps<"div">) => {
       return result.message;
     }
     setIsLoading(false);
-    toast.success("Sign up successful! Please check your email to confirm your account.");
+    toast.success(
+      "Sign up successful! Please check your email to confirm your account.",
+    );
     redirect("/signin");
   };
 
@@ -141,11 +144,14 @@ const SignUpPage = ({ className, ...props }: React.ComponentProps<"div">) => {
                         </span>
                       )}
                     </div>
-                    <Button type="submit" className="w-full">
-                      {isLoading ? "Signing up..." : "Sign up"}
+                    <Button
+                      type="submit"
+                      className={`${isLoading ? "cursor-wait" : "cursor-pointer"} w-full`}
+                    >
+                      {isLoading ? <Spinner message="Signing up" /> : "Sign up"}
                     </Button>
                   </div>
-                  <div className="text-center text-sm mt-4">
+                  <div className="mt-4 text-center text-sm">
                     Already have an account?{" "}
                     <Link
                       href="/signin"

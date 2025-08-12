@@ -18,10 +18,13 @@ import { signInSchema, type SignInFormData } from "@/lib/schema/signin";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 
 const SignIn = ({ className, ...props }: React.ComponentProps<"div">) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(
+    undefined,
+  );
   const router = useRouter();
   const {
     register,
@@ -112,23 +115,27 @@ const SignIn = ({ className, ...props }: React.ComponentProps<"div">) => {
                           Forgot your password?
                         </a>
                       </div>
-                      <Input type="password" {...register("password")} required />
+                      <Input
+                        type="password"
+                        {...register("password")}
+                        required
+                      />
                       {errors.password && (
                         <span className="text-destructive text-sm">
                           {errors.password.message}
                         </span>
                       )}
                       {errorMessage && (
-                        <span className="text-destructive text-sm text-center mt-2">
+                        <span className="text-destructive mt-2 text-center text-sm">
                           {errorMessage}
                         </span>
                       )}
                     </div>
-                    <Button type="submit" className="w-full">
-                      {isLoading ? "Signing in..." : "Sign in"}
+                    <Button type="submit" className={`${isLoading ? "cursor-wait" : "cursor-pointer"} w-full`}>
+                      {isLoading ? <Spinner message="Signing In" /> : "Sign in"}
                     </Button>
                   </div>
-                  <div className="text-center text-sm mt-4">
+                  <div className="mt-4 text-center text-sm">
                     Don&apos;t have an account?{" "}
                     <Link
                       href="/signup"

@@ -1,8 +1,12 @@
 "use server";
-import { SignUpFormData, } from "@/lib/schema/signup";
+import { SignUpFormData } from "@/lib/schema/signup";
 import { createSupabaseServerClient } from "@/utils/supabase/server-client";
 
-export const SignUpAction = async ({ name, email, password }: SignUpFormData) => {
+export const SignUpAction = async ({
+  name,
+  email,
+  password,
+}: SignUpFormData) => {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signUp({
     email: email,
