@@ -5,6 +5,7 @@ import React, {
   useState,
   useCallback,
   DragEvent,
+  ChangeEvent,
 } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,18 +38,22 @@ import { CheckoutSchema, checkoutSchema } from "@/lib/schema/checkout";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Upload, FileCheck, Ban, Check } from "lucide-react";
+import { Upload, FileCheck, Ban, CircleCheck } from "lucide-react";
 import { X } from "lucide-react";
 import { ChevronDownIcon } from "lucide-react";
 import { Service } from "@/features/get-all-services";
 import { toast } from "sonner";
+import { Spinner } from "../ui/spinner";
+import { formatIDR } from "@/features/format";
+import { formatForDatabase, isFutureDateTime } from "@/utils/formatter/datetime";
+import axios from "axios";
 
 const ACCEPTED_MIME_TYPES = [
   "application/pdf",
-  "application/msword", // .doc
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "image/png",
-  "image/jpeg", // .jpg & .jpeg
+  "image/jpeg",
 ];
 
 interface CheckoutModalProps {
@@ -57,16 +62,16 @@ interface CheckoutModalProps {
   onClose: () => void;
 }
 
-const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
+const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
   const [qris, setQris] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [dateOpen, setDateOpen] = React.useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
   const [calendarDate, setCalendarDate] = useState<Date | undefined>(undefined);
   const [sheets, setSheets] = useState<number | null>(null);
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<CheckoutSchema>({
     resolver: zodResolver(checkoutSchema),
@@ -74,7 +79,7 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
     defaultValues: {
       notes: "",
       datePart: "",
-      timePart: "10:30:00",
+      timePart: "10:30",
     },
   });
 
@@ -87,63 +92,11 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
     onClose();
   }, [form, onClose]);
 
-  const onSubmit = async (data: CheckoutSchema) => {
-    if (!uploadedFile) {
-      form.setError("file", { message: "File wajib diunggah" });
-      return;
-    }
-
-    const rawTime = (data.timePart || "").trim();
-    const time = rawTime
-      ? rawTime.length === 5
-        ? `${rawTime}:00`
-        : rawTime
-      : "00:00:00";
-    const isoNeededAt = data.datePart
-      ? new Date(`${data.datePart}T${time}`).toISOString()
-      : "";
-
-    if (isoNeededAt && isNaN(new Date(isoNeededAt).getTime())) {
-      form.setError("datePart", { message: "Tanggal/Waktu tidak valid" });
-      return;
-    }
-
-    const fd = new FormData();
-    fd.append("serviceId", service.id);
-    fd.append("paperId", service.paper_id);
-    fd.append("pages", String(data.pages));
-    fd.append("sheets", String(sheets));
-    fd.append("neededAt", isoNeededAt);
-    fd.append("notes", data.notes || "");
-    fd.append("price", String(service.price || 0));
-    fd.append("paymentMethod", data.payment);
-    fd.append("file", uploadedFile);
-    if (data.payment === "Qris" && data.qris && data.qris.length > 0) {
-      fd.append("receipt", data.qris[0]);
-    }
-
-    setIsSubmitting(true);
-
-    const res = await fetch("/api/transactions", { method: "POST", body: fd });
-    const json = await res.json();
-    if (!res.ok) {
-      console.error(json.error);
-      setIsSubmitting(false);
-      form.reset();
-      toast.error("Transaksi gagal");
-      return;
-    }
-    // sukses: reset
-    setIsSubmitting(false);
-    resetAndClose();
-    toast.success("Transaksi berhasil");
-  };
-
   const handleFileSelect = (file: File) => {
     setUploadedFile(file);
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    form.setValue("file", dt.files);
+    const data = new DataTransfer();
+    data.items.add(file);
+    form.setValue("file", data.files);
     form.clearErrors("file");
   };
 
@@ -160,7 +113,6 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
   const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
       const file = files[0];
@@ -175,28 +127,95 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
     }
   };
 
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       handleFileSelect(files[0]);
     }
   };
 
-  // Tambahkan helper format
-  const formatIDR = (n: number | null) =>
-    n == null ? "-" : `Rp ${n.toLocaleString("id-ID")}`;
+  const handleClick = () => {
+    fileInputRef.current?.click();
+  };
 
-  // Gunakan watch agar reaktif
+  const onSubmit = async (data: CheckoutSchema) => {
+    if (!uploadedFile) {
+      form.setError("file", { message: "File wajib diunggah" });
+      return;
+    }
+
+    // Validate date/time if provided
+    if (data.datePart && data.timePart) {
+      if (!isFutureDateTime(data.datePart, data.timePart)) {
+        form.setError("datePart", {
+          message: "Tanggal/waktu tidak boleh masa lampau",
+        });
+        return;
+      }
+    }
+
+    // Format date/time for database WITHOUT timezone conversion
+    const { needed_date, needed_time } =
+      data.datePart && data.timePart
+        ? formatForDatabase(data.datePart, data.timePart)
+        : { needed_date: null, needed_time: null };
+
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("serviceId", service.id);
+      formData.append("paperId", service.paper_id);
+      formData.append("pages", String(data.pages));
+      formData.append("sheets", String(sheets));
+
+      // Send date/time separately
+      if (needed_date) formData.append("neededDate", needed_date);
+      if (needed_time) formData.append("neededTime", needed_time);
+
+      formData.append("notes", data.notes || "");
+      formData.append("price", String(service.price || 0));
+      formData.append("paymentMethod", data.payment);
+      formData.append("file", uploadedFile);
+
+      if (data.payment === "Qris" && data.qris && data.qris.length > 0) {
+        formData.append("receipt", data.qris[0]);
+      }
+
+      const res = await axios.post("/api/transactions", formData, {
+        timeout: 30000, // 30 second timeout
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.data.error) {
+        console.error("API Error:", res.data.error);
+        toast.error("Transaksi gagal: " + res.data.error);
+        return;
+      }
+
+      resetAndClose();
+      toast.success("Transaksi berhasil disimpan!");
+    } catch (error) {
+      console.error("Submit error:", error);
+
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.error || error.message;
+        toast.error("Gagal menyimpan transaksi: " + message);
+      } else {
+        toast.error("Terjadi kesalahan saat menyimpan transaksi");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const pages = form.watch("pages");
-
-  // Effect hitung harga
   useEffect(() => {
     if (!service.price) {
       setTotalPrice(null);
+      setSheets(null);
       return;
     }
 
@@ -206,8 +225,8 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
       typeof pages === "number"
         ? pages
         : pages && !isNaN(Number(pages))
-        ? Number(pages)
-        : 0;
+          ? Number(pages)
+          : 0;
 
     if (pageCount > 0) {
       if (service.duplex) {
@@ -222,18 +241,17 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
     } else {
       setTotalPrice(null);
     }
-
   }, [pages, service.price, service.duplex]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed w-full bg-foreground/20 dark:bg-background/0 inset-0 z-50 2xl:flex backdrop-blur-md mx-auto items-center justify-center overflow-auto">
-      <div className="relative max-w-screen-xl mx-auto md:px-10 bg-popover xl:border py-10 xl:rounded-lg">
+    <div className="bg-foreground/20 dark:bg-background/0 fixed inset-0 z-50 mx-auto w-full items-center justify-center overflow-auto backdrop-blur-md 2xl:flex">
+      <div className="bg-popover relative mx-auto max-w-screen-xl py-10 md:px-10 xl:rounded-lg xl:border">
         <button
           type="button"
           disabled={isSubmitting}
-          className="absolute top-4 right-4 cursor-pointer text-muted-foreground hover:text-accent-foreground"
+          className="text-muted-foreground hover:text-accent-foreground absolute top-4 right-4 cursor-pointer"
           onClick={resetAndClose}
         >
           <X className="" />
@@ -249,37 +267,33 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
         <form
           id="checkout-form"
           onSubmit={form.handleSubmit(onSubmit)}
-          className="rounded-lg mt-5 px-5 md:px-0 md:h-svh xl:h-auto"
+          className="mt-5 rounded-lg px-5 md:h-svh md:px-0 xl:h-auto"
         >
-          <div className="mb-6 bg-popover rounded-md">
+          <div className="bg-popover mb-6 rounded-md">
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={handleClick}
-              className={`
-            border-2 border-dashed rounded-lg p-8 mt-2 cursor-pointer transition-all duration-200
-            ${
-              isDragOver
-                ? "border-accent-foreground bg-card-foreground/10"
-                : "border hover:border-accent-foreground hover:bg-card-foreground/5"
-            }
-            ${
-              form.formState.errors.file &&
-              "border-destructive/70 bg-card-foreground/5"
-            }
-          `}
+              className={`mt-2 cursor-pointer rounded-lg border-2 border-dashed p-8 transition-all duration-200 ${
+                isDragOver
+                  ? "border-accent-foreground bg-card-foreground/10"
+                  : "hover:border-accent-foreground hover:bg-card-foreground/5 border"
+              } ${
+                form.formState.errors.file &&
+                "border-destructive/70 bg-card-foreground/5"
+              } `}
             >
               <div className="text-center">
                 {uploadedFile ? (
                   <div className="space-y-2">
-                    <div className="text-gray-700 dark:text-muted-foreground">
+                    <div className="dark:text-muted-foreground text-gray-700">
                       <FileCheck className="mx-auto h-12 w-12" />
                     </div>
-                    <p className="text-sm font-medium text-muted-foreground">
+                    <p className="text-muted-foreground text-sm font-medium">
                       {uploadedFile.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                     <button
@@ -290,32 +304,32 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                         const dt = new DataTransfer();
                         form.setValue("file", dt.files);
                       }}
-                      className="text-xs text-destructive hover:text-red-800 underline"
+                      className="text-destructive text-xs underline hover:text-red-800"
                     >
                       Remove file
                     </button>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <div className="text-gray-300 dark:text-muted-foreground">
+                    <div className="dark:text-muted-foreground text-gray-300">
                       <Upload className="mx-auto h-12 w-12" />
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">
+                      <p className="text-muted-foreground text-sm font-medium">
                         <span className="text-accent-foreground cursor-pointer">
                           Click to upload
                         </span>{" "}
                         or drag and drop
                       </p>
                       {form.formState.errors.file ? (
-                        <p className="text-destructive text-sm mt-1">
+                        <p className="text-destructive mt-1 text-sm">
                           {form.formState.errors.file &&
                           typeof form.formState.errors.file.message === "string"
                             ? form.formState.errors.file.message
                             : null}
                         </p>
                       ) : (
-                        <p className="text-xs text-muted-foreground/80">
+                        <p className="text-muted-foreground/80 text-xs">
                           PDF, DOC, DOCX, PNG, JPG or JPEG
                         </p>
                       )}
@@ -335,22 +349,43 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
               onChange={handleFileInputChange}
             />
           </div>
-          <div className="mx-auto md:grid lg:grid-cols-2 gap-5 lg:gap-10">
+          <div className="mx-auto gap-5 md:grid lg:grid-cols-2 lg:gap-10">
             <div className="space-y-3">
-              <div className="mx-auto items-center flex flex-col space-y-3">
-                <div className="w-full grid grid-cols-3 gap-5 text-sm md:text-md">
-                    <div className="w-full text-center justify-start">
-                      <span className="font-semibold">Ukuran Kertas</span> <p>{service.papers?.size}</p>
-                    </div>
-                    <div className="w-full text-center justify-center border-x">
-                      <span className="font-semibold">Berwarna</span> <p>{service.color ? <Check size={16} className="inline text-emerald-400" /> : <Ban size={16} className="inline text-destructive" />}</p>
-                    </div>
-                    <div className="w-full text-center justify-end">
-                      <span className="font-semibold">Bolak Balik</span> <p>{service.duplex ? <Check size={16} className="inline text-emerald-400" /> : <Ban size={16} className="inline text-destructive" />}</p>
-                    </div>
+              <div className="mx-auto flex flex-col items-center space-y-3">
+                <div className="md:text-md grid w-full grid-cols-3 gap-5 text-sm">
+                  <div className="w-full justify-start text-center">
+                    <span className="font-semibold">Ukuran Kertas</span>{" "}
+                    <p>{service.papers?.size}</p>
+                  </div>
+                  <div className="w-full justify-center border-x text-center">
+                    <span className="font-semibold">Berwarna</span>{" "}
+                    <p>
+                      {service.color ? (
+                        <CircleCheck
+                          size={16}
+                          className="text-complete-foreground inline"
+                        />
+                      ) : (
+                        <Ban size={16} className="text-destructive inline" />
+                      )}
+                    </p>
+                  </div>
+                  <div className="w-full justify-end text-center">
+                    <span className="font-semibold">Bolak Balik</span>{" "}
+                    <p>
+                      {service.duplex ? (
+                        <CircleCheck
+                          size={16}
+                          className="text-complete-foreground inline"
+                        />
+                      ) : (
+                        <Ban size={16} className="text-destructive inline" />
+                      )}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="w-full space-y-3 md:grid grid-cols-2 gap-5 border-t pt-3">
+                <div className="w-full grid-cols-2 gap-5 space-y-3 border-t pt-3 md:grid">
                   <div className="space-y-3">
                     <Label>Jumlah Halaman</Label>
                     <Input
@@ -369,7 +404,7 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                   </div>
                   <div className="space-y-3">
                     <div className="flex gap-4">
-                      <div className="flex flex-col gap-3 w-full">
+                      <div className="flex w-full flex-col gap-3">
                         <Label htmlFor="date-picker" className="px-1">
                           Tanggal
                         </Label>
@@ -378,7 +413,7 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                             <Button
                               variant="outline"
                               id="date-picker"
-                              className="justify-between font-normal w-full"
+                              className="w-full justify-between font-normal"
                             >
                               {form.watch("datePart") || "Pilih tanggal"}
                               <ChevronDownIcon />
@@ -413,7 +448,7 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-col gap-3 w-full">
+                      <div className="flex w-full flex-col gap-3">
                         <Label htmlFor="time-picker" className="px-1">
                           Waktu
                         </Label>
@@ -436,23 +471,13 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                 </div>
               </div>
               <div className="w-full">
-                {/* <Label htmlFor="date" className="">
-                  Tanggal
-                </Label>
-                <Calendar
-                  {...form.register("date")}
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  className="w-full rounded-lg border"
-                /> */}
                 <div className="space-y-3">
                   <Label htmlFor="notes">Catatan</Label>
                   <textarea
                     {...form.register("notes")}
                     name="notes"
                     id="notes"
-                    className="dark:bg-input/20 border rounded-md w-full p-3 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                    className="dark:bg-input/20 focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border p-3 focus-visible:ring-[3px]"
                     rows={4}
                   ></textarea>
                   {form.formState.errors.notes && (
@@ -493,7 +518,7 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                       <Label>Bukti Pembayaran</Label>
                       <Input
                         {...form.register("qris")}
-                        className="block file:bg-muted file:rounded-md file:px-2 pl-2 file:hover:bg-accent-foreground/10"
+                        className="file:bg-muted file:hover:bg-accent-foreground/10 block pl-2 file:rounded-md file:px-2"
                         placeholder="Bukti Pembayaran"
                         type="file"
                         accept="image/*"
@@ -516,8 +541,8 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                   />
                 </div>
               ) : (
-                <div className="w-full lg:h-[300px] overflow-auto text-accent-foreground/90 border border-destructive/30 bg-destructive/10 rounded-md py-3 px-4 md:mb-20 lg:mb-0">
-                  <h1 className="text-lg font-semibold justify-self-center">
+                <div className="text-accent-foreground/90 border-destructive/30 bg-destructive/10 w-full overflow-auto rounded-md border px-4 py-3 md:mb-20 lg:mb-0 lg:h-[300px]">
+                  <h1 className="justify-self-center text-lg font-semibold">
                     Informasi Pembayaran
                   </h1>
                   <h2 className="font-semibold">Cash</h2>
@@ -531,7 +556,7 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                     </li>
                     <li>Menunjukkan bukti transaksi saat pembayaran.</li>
                   </ul>
-                  <h2 className="font-semibold mt-1">Qris</h2>
+                  <h2 className="mt-1 font-semibold">Qris</h2>
                   <ul className="text-md list-disc pl-5">
                     <li>Pembayaran dilaklukan ketika pengisian form.</li>
                     <li>
@@ -541,8 +566,8 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
                   </ul>
                 </div>
               )}
-              <div className="md:absolute md:bottom-1 w-full space-y-2">
-                <div className="flex w-full justify-between pb-1 border-b">
+              <div className="w-full space-y-2 md:absolute md:bottom-1">
+                <div className="flex w-full justify-between border-b pb-1">
                   <h2>Harga perlembar: </h2>
                   <h2 className="font-semibold">{formatIDR(service.price)}</h2>
                 </div>
@@ -558,7 +583,7 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
               <Button
                 type="button"
                 variant={"secondary"}
-                className="w-full my-5"
+                className="my-5 w-full"
                 disabled={isSubmitting}
               >
                 Kembali
@@ -585,13 +610,15 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
             variant={"default"}
             type="submit"
             disabled={service.papers?.sheets === 0 || isSubmitting}
-            className="w-full"
+            className={`{${service.papers?.sheets === 0 ? "cursor-not-allowed" : isSubmitting ? "cursor-wait" : ""} w-full`}
           >
-            {isSubmitting
-              ? "Sedang Diproses..."
-              : service.papers?.sheets > 0
-              ? "Pesan"
-              : "Stok Habis"}
+            {isSubmitting ? (
+              <Spinner message="Processing" />
+            ) : service.papers?.sheets > 0 ? (
+              "Pesan"
+            ) : (
+              "Stok Habis"
+            )}
           </Button>
         </form>
       </div>
@@ -599,4 +626,4 @@ const CheckoutPage = ({ service, open, onClose }: CheckoutModalProps) => {
   );
 };
 
-export default CheckoutPage;
+export default CheckoutModal;
