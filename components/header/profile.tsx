@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ModeToggle from "./mode-toggle";
 import Image from "next/image";
-import { createSupabaseBrowserClient } from "@/utils/supabase/broswer-client";
+import { supabase } from "@/utils/supabase/broswer-client";
 import { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { Button } from "../ui/button";
@@ -18,9 +18,21 @@ import { useRouter, usePathname } from "next/navigation";
 
 const Profile = ({ initialUser }: { initialUser: User | null }) => {
   const [user, setUser] = useState<User | null>(initialUser);
-  const supabase = createSupabaseBrowserClient();
   const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (!mounted) return null; // ⬅ cegah hydration mismatch
 
   const signOutUser = async () => {
     const { error } = await supabase.auth.signOut();
@@ -30,16 +42,6 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
       router.push("/signin");
     }
   };
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
   return (
     <>
       {user ? (
@@ -66,8 +68,11 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
               </div>
             </DropdownMenuTrigger>
           </div>
-          <DropdownMenuContent className="backdrop-blur-md bg-background/50" align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuContent
+            className="bg-background/50 backdrop-blur-md"
+            align="end"
+          >
+            <DropdownMenuLabel>Akun</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <Link href="/me">
               <DropdownMenuItem>Profile</DropdownMenuItem>
@@ -77,7 +82,9 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
                 <DropdownMenuItem>Dashboard</DropdownMenuItem>
               </Link>
             ) : (
-              <DropdownMenuItem>Riwayat</DropdownMenuItem>
+              <Link href="/me/history">
+                <DropdownMenuItem>History</DropdownMenuItem>
+              </Link>
             )}
             <DropdownMenuItem
               onClick={signOutUser}
@@ -87,6 +94,7 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Tampilan</DropdownMenuLabel>
+            <DropdownMenuSeparator />
             <DropdownMenuItem>
               <ModeToggle />
             </DropdownMenuItem>

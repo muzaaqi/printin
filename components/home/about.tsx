@@ -13,8 +13,8 @@ const AboutSection = () => {
     <div id="about" className="mx-auto my-20 flex max-w-screen-xl flex-col">
       <div className="max-w-screen-xl px-4 py-2 text-center">
         <h2 className="text-accent-foreground text-3xl font-bold">About</h2>
-        <div className="mt-10 grid gap-10 p-4 md:grid-cols-2">
-          <div className="flex flex-col xl:items-start">
+        <div className="flex flex-col-reverse mt-10 md:grid gap-10 p-4 md:grid-cols-2">
+          <div className="md:flex flex-col 2xl:items-start">
             <div className="flex flex-col items-center">
               <HoverCard>
                 <HoverCardTrigger>
@@ -48,7 +48,7 @@ const AboutSection = () => {
               </h2>
             </div>
           </div>
-          <div className="flex flex-col md:items-end">
+          <div className="flex flex-col xl:items-end">
             <div className="max-w-md">
               <h1 className="text-2xl font-semibold">Introduction</h1>
               <p className="text-muted-foreground mt-5 text-justify">
