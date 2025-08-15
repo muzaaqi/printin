@@ -1,18 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-} from "../ui/card";
 import { Button } from "../ui/button";
 import CheckoutModal from "./checkout-modal";
 import { Service } from "@/features/get-all-services";
-import { formatIDR } from "@/features/format";
+import { formatIDR } from "@/utils/formatter/currency";
 import { Ban, CircleCheck } from "lucide-react";
 
 const ServicesCard = ({
@@ -25,60 +17,73 @@ const ServicesCard = ({
   const [open, setOpen] = useState(false);
   return (
     <>
-      <div className="mx-auto w-full px-4 py-10 sm:px-6 lg:px-8">
-        <Card className="w-full">
-          <CardHeader className="flex flex-col items-center">
-            <Image
-              src={service.image_url}
-              width={200}
-              height={200}
-              alt={service.name}
-            />
-            <CardTitle className="text-center text-2xl">
-              {service.name}
-            </CardTitle>
-            <CardDescription>
-              {service.papers?.size} - {service.papers?.type}
-            </CardDescription>
-            <CardDescription
-              className={`${
-                service.papers?.sheets <= 10
-                  ? "bg-destructive"
-                  : "bg-accent-foreground"
-              } text-accent rounded-md px-2 py-1 font-semibold`}
-            >
-              {service.papers?.sheets
-                ? `${service.papers?.sheets} Tersisa`
-                : "Habis"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="border-accent-foreground/20 flex flex-col rounded-lg border px-3 py-2 space-y-2">
-              <CardTitle className="mb-1 self-center text-lg font-semibold">
-                Harga
-              </CardTitle>
-              <div className="flex items-center justify-between border-b">
+        <div className="bg-card flex w-full max-w-sm flex-col space-y-3 rounded-lg border p-4 shadow-md md:space-y-4 md:p-6">
+          <div className="grid grid-cols-3 flex-col items-center gap-10 md:flex md:flex-col md:gap-0">
+            <div className="md:-h-[100px] w-[100px] md:h-[200px] md:w-[200px]">
+              <Image
+                src={service.image_url}
+                width={200}
+                height={200}
+                alt={service.name}
+                className=""
+              />
+            </div>
+            <div className="col-span-2 md:flex md:flex-col md:items-center">
+              <h2 className="font-bold md:text-2xl">{service.name}</h2>
+              <p className="md:text-md text-muted-foreground mb-1 text-xs md:mb-3">
+                {service.papers?.size} - {service.papers?.type}
+              </p>
+              <p
+                className={`${
+                  service.papers?.sheets <= 10
+                    ? "bg-destructive"
+                    : "bg-accent-foreground"
+                } text-accent md:text-md w-1/2 rounded-md px-2 py-1 text-center text-xs font-semibold md:w-fit`}
+              >
+                {service.papers?.sheets
+                  ? `${service.papers?.sheets} Tersisa`
+                  : "Habis"}
+              </p>
+            </div>
+          </div>
+          <div>
+            <div className="border-accent-foreground/20 flex flex-col space-y-1 rounded-lg border px-3 py-2 md:space-y-2">
+              <div className="md:text-md flex items-center justify-between border-b text-sm">
                 <p>Ukuran Kertas</p>
                 <p className="font-semibold">
                   {service.papers?.size}
                   <span className="text-muted-foreground"></span>
                 </p>
               </div>
-              <div className="flex items-center justify-between border-b">
+              <div className="md:text-md flex items-center justify-between border-b text-sm">
                 <p>Berwarna</p>
                 <p className="font-semibold">
-                  {service.color ? <CircleCheck size={16} className="inline text-complete-foreground" /> : <Ban size={16} className="inline text-destructive" />}
+                  {service.color ? (
+                    <CircleCheck
+                      size={16}
+                      className="text-complete-foreground inline"
+                    />
+                  ) : (
+                    <Ban size={16} className="text-destructive inline" />
+                  )}
                   <span className="text-muted-foreground"></span>
                 </p>
               </div>
-              <div className="flex items-center justify-between border-b">
+              <div className="md:text-md flex items-center justify-between border-b text-sm">
                 <p>Bolak Balik</p>
                 <p className="font-semibold">
-                  {service.duplex ? <CircleCheck size={16} className="inline text-complete-foreground" /> : <Ban size={16} className="inline text-destructive" />}
+                  {service.duplex ? (
+                    <CircleCheck
+                      size={16}
+                      className="text-complete-foreground inline"
+                    />
+                  ) : (
+                    <Ban size={16} className="text-destructive inline" />
+                  )}
                   <span className="text-muted-foreground"></span>
                 </p>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="md:text-md flex items-center justify-between text-sm">
                 <p>Harga</p>
                 <p className="font-semibold">
                   {formatIDR(service.price)}
@@ -86,8 +91,8 @@ const ServicesCard = ({
                 </p>
               </div>
             </div>
-          </CardContent>
-          <CardFooter className="flex justify-center">
+          </div>
+          <div className="flex justify-center">
             <Button
               disabled={service.papers?.sheets === 0 || !isAuthenticated}
               onClick={() => setOpen(true)}
@@ -99,9 +104,8 @@ const ServicesCard = ({
                   ? "Sign In untuk Checkout"
                   : "Checkout"}
             </Button>
-          </CardFooter>
-        </Card>
-      </div>
+          </div>
+        </div>
       <CheckoutModal
         service={service}
         open={open}

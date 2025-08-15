@@ -44,8 +44,11 @@ import { ChevronDownIcon } from "lucide-react";
 import { Service } from "@/features/get-all-services";
 import { toast } from "sonner";
 import { Spinner } from "../ui/spinner";
-import { formatIDR } from "@/features/format";
-import { formatForDatabase, isFutureDateTime } from "@/utils/formatter/datetime";
+import { formatIDR } from "@/utils/formatter/currency";
+import {
+  formatForDatabase,
+  isFutureDateTime,
+} from "@/utils/formatter/datetime";
 import axios from "axios";
 
 const ACCEPTED_MIME_TYPES = [
@@ -77,9 +80,8 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
     resolver: zodResolver(checkoutSchema),
     mode: "onChange",
     defaultValues: {
-      notes: "",
-      datePart: "",
       timePart: "10:30",
+      payment: undefined,
     },
   });
 
@@ -178,11 +180,11 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
       formData.append("paymentMethod", data.payment);
       formData.append("file", uploadedFile);
 
-      if (data.payment === "Qris" && data.qris && data.qris.length > 0) {
-        formData.append("receipt", data.qris[0]);
+      if (data.payment === "Qris" && data.receipt?.length) {
+        formData.append("receipt", data.receipt[0]);
       }
 
-      const res = await axios.post("/api/transactions", formData, {
+      const res = await axios.post("/api/transactions/create", formData, {
         timeout: 30000, // 30 second timeout
         headers: {
           "Content-Type": "multipart/form-data",
@@ -267,7 +269,7 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
         <form
           id="checkout-form"
           onSubmit={form.handleSubmit(onSubmit)}
-          className="mt-5 rounded-lg px-5 md:h-svh md:px-0 xl:h-auto"
+          className="mt-5 rounded-lg px-5 md:px-0 xl:h-auto"
         >
           <div className="bg-popover mb-6 rounded-md">
             <div
@@ -395,9 +397,14 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                       min={1}
                       max={service.papers?.sheets}
                       placeholder={`Tersisa ${service.papers?.sheets.toLocaleString()}`}
+                      className={`${
+                        form.formState.errors.pages
+                          ? "border-destructive focus:border-destructive"
+                          : ""
+                      }`}
                     />
                     {form.formState.errors.pages && (
-                      <span className="text-destructive">
+                      <span className="text-destructive text-sm">
                         {form.formState.errors.pages.message}
                       </span>
                     )}
@@ -430,8 +437,17 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                               onSelect={(d) => {
                                 setCalendarDate(d);
                                 if (d) {
-                                  const iso = d.toISOString(); // yyyy-mm-ddTHH:MM:SSZ
-                                  const yyyyMmDd = iso.slice(0, 10);
+                                  const yyyy = d.getFullYear();
+                                  const mm = String(d.getMonth() + 1).padStart(
+                                    2,
+                                    "0",
+                                  );
+                                  const dd = String(d.getDate()).padStart(
+                                    2,
+                                    "0",
+                                  );
+                                  const yyyyMmDd = `${yyyy}-${mm}-${dd}`;
+
                                   form.setValue("datePart", yyyyMmDd, {
                                     shouldDirty: true,
                                     shouldValidate: true,
@@ -456,7 +472,7 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                           {...form.register("timePart")}
                           type="time"
                           id="time-picker"
-                          step="60"
+                          step="600"
                           defaultValue="10:30:00"
                           className="bg-background w-full appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
                         />
@@ -486,44 +502,95 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                     </span>
                   )}
                 </div>
-
+                {/* // Replace the payment method section in your checkout form with
+                this: */}
                 <div className={`${qris && "grid grid-cols-2 gap-5"} mt-3`}>
+                  {/* Payment Method Select */}
                   <div className="space-y-3">
-                    <Label htmlFor="payment-methods">Metode Pembayaran</Label>
+                    <Label htmlFor="payment-methods">Metode Pembayaran *</Label>
+
                     <Controller
                       name="payment"
                       control={form.control}
-                      render={({ field }) => (
-                        <Select
-                          value={field.value} // penting agar controlled
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            setQris(value === "Qris");
-                          }}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Metode Pembayaran" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Qris">Qris</SelectItem>
-                            <SelectItem value="Cash">Cash</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      render={({ field, fieldState }) => (
+                        <div className="space-y-2">
+                          <Select
+                            value={field.value || ""} // Important: handle undefined
+                            onValueChange={(value) => {
+                              field.onChange(value as "Qris" | "Cash");
+                              setQris(value === "Qris");
+
+                              // Clear qris errors when switching to Cash
+                              if (value === "Cash") {
+                                form.clearErrors("receipt");
+                              }
+
+                              // Trigger validation to show/hide errors immediately
+                              form.trigger("payment");
+                            }}
+                          >
+                            <SelectTrigger
+                              className={`w-full ${
+                                fieldState.error
+                                  ? "border-destructive focus:border-destructive"
+                                  : ""
+                              }`}
+                            >
+                              <SelectValue placeholder="Pilih metode pembayaran" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Qris">QRIS</SelectItem>
+                              <SelectItem value="Cash">Cash</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          {/* Error message for payment method */}
+                          {fieldState.error && (
+                            <p className="text-destructive mt-1 text-sm">
+                              {fieldState.error.message}
+                            </p>
+                          )}
+                        </div>
                       )}
                     />
                   </div>
 
+                  {/* QRIS Receipt Upload */}
                   {qris && (
                     <div className="space-y-3">
-                      <Label>Bukti Pembayaran</Label>
-                      <Input
-                        {...form.register("qris")}
-                        className="file:bg-muted file:hover:bg-accent-foreground/10 block pl-2 file:rounded-md file:px-2"
-                        placeholder="Bukti Pembayaran"
-                        type="file"
-                        accept="image/*"
-                        required
+                      <Label htmlFor="qris-receipt">Bukti Pembayaran *</Label>
+                      <Controller
+                        name="receipt" // ⬅️ ganti jadi receipt
+                        control={form.control}
+                        render={({ field }) => (
+                          <Input
+                            id="receipt"
+                            className={`file:bg-muted file:hover:bg-accent-foreground/10 block pl-2 file:rounded-md file:px-2 ${
+                              form.formState.errors.receipt
+                                ? "border-destructive focus:border-destructive"
+                                : ""
+                            }`}
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const files = e.target.files
+                                ? Array.from(e.target.files)
+                                : [];
+                              field.onChange(files); // simpan di form
+                              form.trigger("receipt");
+                            }}
+                          />
+                        )}
                       />
+                      {/* Error message for QRIS receipt */}
+                      {form.formState.errors.receipt && (
+                        <p className="text-destructive mt-1 text-sm">
+                          {typeof form.formState.errors.receipt?.message ===
+                          "string"
+                            ? form.formState.errors.receipt.message
+                            : null}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -541,7 +608,7 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                   />
                 </div>
               ) : (
-                <div className="text-accent-foreground/90 border-destructive/30 bg-destructive/10 w-full overflow-auto rounded-md border px-4 py-3 md:mb-20 lg:mb-0 lg:h-[300px]">
+                <div className="text-accent-foreground/90 border-pending-foreground/30 bg-pending-foreground/10 w-full overflow-auto rounded-md border px-4 py-3 lg:mb-0">
                   <h1 className="justify-self-center text-lg font-semibold">
                     Informasi Pembayaran
                   </h1>
@@ -566,7 +633,40 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                   </ul>
                 </div>
               )}
-              <div className="w-full space-y-2 md:absolute md:bottom-1">
+              {/* Add validation feedback at the bottom of form */}
+              {/* This helps users see what's missing */}
+              {!form.formState.isValid &&
+                Object.keys(form.formState.errors).length > 0 && (
+                  <div className="bg-destructive/10 border-destructive/20 mt-4 rounded-md border p-3 lg:mb-20">
+                    <p className="text-destructive mb-2 text-sm font-medium">
+                      Mohon lengkapi data berikut:
+                    </p>
+                    <ul className="text-destructive space-y-1 text-sm">
+                      {form.formState.errors.payment && (
+                        <li>• {form.formState.errors.payment.message}</li>
+                      )}
+                      {form.formState.errors.receipt && (
+                        <li>
+                          •
+                          {typeof form.formState.errors.receipt?.message ===
+                          "string"
+                            ? form.formState.errors.receipt.message
+                            : null}
+                        </li>
+                      )}
+                      {form.formState.errors.file && (
+                        <li>• File dokumen wajib diupload</li>
+                      )}
+                      {form.formState.errors.pages && (
+                        <li>• {form.formState.errors.pages.message}</li>
+                      )}
+                      {form.formState.errors.datePart && (
+                        <li>• {form.formState.errors.datePart.message}</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              <div className="my-auto w-full space-y-2 md:bottom-1 lg:absolute">
                 <div className="flex w-full justify-between border-b pb-1">
                   <h2>Harga perlembar: </h2>
                   <h2 className="font-semibold">{formatIDR(service.price)}</h2>

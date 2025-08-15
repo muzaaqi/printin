@@ -16,7 +16,7 @@ export interface Service {
   } // pakai null jika mungkin belum ada paper terkait
 }
 
-type GetAllServices = Service[];
+export type GetAllServices = Service[];
 
 export const getAllServices = async () => {
   const supabase = await createSupabaseServerClient();
@@ -29,5 +29,5 @@ export const getAllServices = async () => {
   if (error) {
     throw new Error(error.message);
   }
-  return data;
+  return data as GetAllServices;
 };
