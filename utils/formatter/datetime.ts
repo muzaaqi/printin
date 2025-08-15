@@ -46,6 +46,18 @@ export const formatDateLong = (dateStr: string): string => {
   }
 }
 
+
+export const formatDate = (iso?: string) => {
+    if (!iso) return "Unknown";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "Unknown";
+    return d.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "numeric",
+      year: "numeric",
+    });
+}
+
 /**
  * Display date in short format: "15/01/2025"
  */
@@ -83,6 +95,19 @@ export const formatDateTime = (dateTimeStr: string): string =>  {
     const timeStr = dateTimeStr.split("T")[1] || "00:00:00";
     // Parse YYYY-MM-DD and convert to DD/MM/YYYY
     return `${formatDateShortStriped(dateStr)} - ${formatTime24(timeStr)}`;
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return dateTimeStr;
+  }
+}
+
+export const formatDateOnly = (dateTimeStr: string): string =>  {
+  if (!dateTimeStr) return "";
+
+  try {
+    const dateStr = dateTimeStr.split("T")[0];
+    // Parse YYYY-MM-DD and convert to DD/MM/YYYY
+    return `${formatDateShortStriped(dateStr)}`;
   } catch (error) {
     console.error("Error formatting date:", error);
     return dateTimeStr;
