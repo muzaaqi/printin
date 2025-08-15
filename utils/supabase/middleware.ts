@@ -16,17 +16,17 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
+            request.cookies.set(name, value),
           );
           supabaseResponse = NextResponse.next({
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
   // Do not run code between createServerClient and
@@ -35,43 +35,52 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: DO NOT REMOVE auth.getUser()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const pathname = request.nextUrl.pathname;
+  const searchParams = request.nextUrl.searchParams;
+
+  if (
+    pathname.startsWith("/auth/callback") ||
+    searchParams.has("code") ||
+    searchParams.has("state")
+  ) {
+    return supabaseResponse;
+  }
+
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
 
   if (
     !user &&
-    request.nextUrl.pathname !== "/" &&
-    request.nextUrl.pathname !== "/services" &&
-    !request.nextUrl.pathname.startsWith("/signin") &&
-    !request.nextUrl.pathname.startsWith("/signup")
+    pathname !== "/" &&
+    pathname !== "/services" &&
+    !pathname.startsWith("/signin") &&
+    !pathname.startsWith("/signup")
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/signin";
     return NextResponse.redirect(url);
   } else if (
     user &&
-    (request.nextUrl.pathname === "/signin" ||
-      request.nextUrl.pathname === "/signup")
+    (pathname === "/signin" || pathname === "/signup")
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
-  if (
-    user?.user_metadata?.role === "admin" &&
-    request.nextUrl.pathname.startsWith("/dashboard")
-  ) {
-    return NextResponse.next();
-  } else if (
-    user?.user_metadata?.role !== "admin" &&
-    request.nextUrl.pathname.startsWith("/dashboard")
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+  // 🔹 Cek role admin
+  if (pathname.startsWith("/dashboard")) {
+    if (user?.user_metadata?.role === "admin") {
+      return supabaseResponse;
+    } else {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
   }
+
+  return supabaseResponse;
+}
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
@@ -85,6 +94,3 @@ export async function updateSession(request: NextRequest) {
   //    return myNewResponse
   // If this is not done, you may be causing the browser and server to go out
   // of sync and terminate the user's session prematurely!
-
-  return supabaseResponse;
-}

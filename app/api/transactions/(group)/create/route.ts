@@ -232,13 +232,6 @@ export async function POST(req: NextRequest) {
     // Insert transaction
     const insertData = {
       user_id: user.id,
-      user_name:
-        user.user_metadata?.full_name ||
-        user.user_metadata?.display_name ||
-        user.email?.split("@")[0],
-      user_email: user.email,
-      user_phone: user.user_metadata?.phone || null,
-      user_avatar: user.user_metadata?.avatar_url || null,
       service_id: serviceId,
       paper_id: paperId,
       file_url: fileUrl,
