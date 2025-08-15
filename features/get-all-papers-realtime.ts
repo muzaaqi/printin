@@ -1,88 +1,55 @@
-import { createSupabaseBrowserClient } from "@/utils/supabase/broswer-client";
+import { supabase } from "@/utils/supabase/broswer-client";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
-interface PaperRow {
+export type Paper = {
   id: string;
-  brand: string;
   size: string;
   type: string;
   sheets: number;
-  price: number;
-}
-
-export interface Paper {
-  id: string | undefined;
   brand: string;
-  size: string;
-  type: string;
-  remainingSheets: number;
   price: number;
-}
+}; 
 
-function adapt(row: PaperRow): Paper {
-  return {
-    id: row.id,
-    brand: row.brand,
-    size: row.size,
-    type: row.type,
-    remainingSheets: row.sheets,
-    price: row.price,
-  };
-}
 
-type PapersMap = Map<string, Paper>;
-
-export const subscribePapers = async (
+export const GetAllPapersRealtime = async (
   onChange: (papers: Paper[]) => void,
-): Promise<() => void> => {
-  const client = createSupabaseBrowserClient();
-
-  const papersMap: PapersMap = new Map();
-  let initialDataLoaded = false;
-
-  // 1. Load initial data
-  const { data: initialRows, error } = await client
+): Promise<Paper[]> => {
+  // Step 1: Ambil data awal
+  const { data, error } = await supabase
     .from("papers")
-    .select("id, size, type, sheets, brand, price")
+    .select("*")
     .order("sheets", { ascending: true });
 
-  if (error) throw new Error(error.message);
-
-  for (const row of (initialRows ?? []) as PaperRow[]) {
-    papersMap.set(row.id, adapt(row));
+  if (error) {
+    console.error(error);
+    return;
   }
-  initialDataLoaded = true;
-  onChange(Array.from(papersMap.values()));
 
-  // 2. Subscribe realtime
-  const channel = client
-    .channel("public:papers")
-    .on(
+  // Kirim data awal ke callback
+  onChange(data as Paper[]);
+
+  // Step 2: Buat subscription realtime
+  const channel = supabase
+    .channel("papers-changes")
+    .on<RealtimePostgresChangesPayload<Paper>>(
       "postgres_changes",
       { event: "*", schema: "public", table: "papers" },
-      (payload: RealtimePostgresChangesPayload<PaperRow>) => {
-        if (!initialDataLoaded) return;
+      async () => {
+        // Ambil data terbaru setiap ada perubahan
+        const { data: updatedData, error: updateError } = await supabase
+          .from("papers")
+          .select("*")
+          .order("sheets", { ascending: false });
 
-        if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-          if (payload.new) {
-            papersMap.set(payload.new.id, adapt(payload.new));
-          }
-        } else if (payload.eventType === "DELETE") {
-          if (payload.old && payload.old.id) {
-            papersMap.delete(payload.old.id);
-          }
+        if (!updateError) {
+          onChange(updatedData as Paper[]);
         }
-
-        onChange(Array.from(papersMap.values()));
       },
     )
-    .subscribe((status, err) => {
-      if (err) console.error("Realtime error:", err);
-    });
+    .subscribe();
 
-  // 3. Cleanup
+  // Step 3: Return unsubscribe function
   return () => {
-    channel.unsubscribe();
+    supabase.removeChannel(channel);
   };
 };
-

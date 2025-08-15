@@ -59,7 +59,7 @@ const PapersCard = ({ paper }: { paper: Paper }) => {
               </Button>
               <Input
                 {...form.register("sheets", { valueAsNumber: true })}
-                defaultValue={paper.remainingSheets}
+                defaultValue={paper.sheets}
                 className="w-20 text-center"
               />
               <Button
