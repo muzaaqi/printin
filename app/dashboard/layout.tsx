@@ -15,13 +15,13 @@ export default async function DashboardLayout({
   const user = (await getCurrentUser()) as SidebarUser | null;
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen">
       {/* Sidebar kiri: tidak menyusut, penuh tinggi */}
       <aside className="border-border h-full shrink-0 border-r">
         <Sidebar user={user} />
       </aside>
       {/* Konten kanan: ambil sisa lebar dan jadi area scroll */}
-      <main className="h-full min-w-0 flex-1 overflow-y-auto p-6">
+      <main className="h-full min-w-0 flex-1 overflow-y-auto p-6 scrollbar-hide">
         {children}
       </main>
     </div>
