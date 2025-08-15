@@ -2,26 +2,17 @@ import React from "react";
 import Image from "next/image";
 import { getCurrentUser } from "@/features/get-current-user";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/utils/formatter/datetime";
 
 const ProfilePage = async () => {
   const user = await getCurrentUser();
-  const formatDate = (iso?: string) => {
-    if (!iso) return "Unknown";
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return "Unknown";
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-  };
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center space-y-10">
-      <div className="mt-10 text-center">
+    <div className="mx-auto flex max-w-md flex-col items-center space-y-5 px-5 md:space-y-10">
+      <div className="mt-3 text-center md:mt-10">
         <h1 className="text-2xl font-bold">Profile</h1>
         <p className="text-muted-foreground">Customize Your Profile!</p>
       </div>
-      <div className="flex w-full flex-col items-center justify-center rounded-md border p-10">
+      <div className="bg-card flex w-full flex-col items-center justify-center rounded-lg border p-5 md:p-10">
         <div className="rounded-full border-2 p-1">
           <Image
             src={user?.user_metadata?.avatar_url || "/default_avatar.svg"}
@@ -37,26 +28,26 @@ const ProfilePage = async () => {
           </h2>
           <Button className="mt-2 text-xs">Edit Profile</Button>
         </div>
-        <div className="mt-4 w-full space-y-2 rounded-md border p-3">
-          <div className="flex justify-between gap-5">
+        <div className="bg-card mt-4 w-full space-y-2 rounded-lg border p-3">
+          <div className="md:text-md flex justify-between gap-5 text-sm">
             <p>Email</p>
             <p className="text-muted-foreground">
               {user?.email || "Unknown Email"}
             </p>
           </div>
-          <div className="flex justify-between gap-5">
+          <div className="md:text-md flex justify-between gap-5 text-sm">
             <p>Telepon</p>
             <p className="text-muted-foreground">
               {user?.phone || "Unknown Phone"}
             </p>
           </div>
-          <div className="flex justify-between gap-5">
+          <div className="md:text-md flex justify-between gap-5 text-sm">
             <p>Alamat</p>
             <p className="text-muted-foreground">
               {user?.user_metadata?.address || "Unknown Address"}
             </p>
           </div>
-          <div className="flex justify-between gap-5">
+          <div className="md:text-md flex justify-between gap-5 text-sm">
             <p>Bergabung Pada</p>
             <p className="text-muted-foreground">
               {formatDate(user?.created_at) || "Unknown Join Date"}

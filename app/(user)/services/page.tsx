@@ -12,7 +12,7 @@ const ServicesPage = async () => {
           <h1 className="text-3xl font-bold">Services</h1>
           <p>Choose one of our services!</p>
         </div>
-        <div className="flex sm:flex md:grid md:grid-cols-2 lg:grid-cols-3 px-4 sm:px-6 lg:px-8 py-10">
+        <div className="flex mx-auto justify-center md:grid md:grid-cols-2 lg:grid-cols-3 px-4 sm:px-6 lg:px-8 py-10">
           {services.map((service) => (
             <ServicesCard
               key={service.id}
