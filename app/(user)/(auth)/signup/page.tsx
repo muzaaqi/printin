@@ -1,6 +1,5 @@
 "use client";
-import React from "react";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { SignUpAction } from "./signup-actions";
-import { createSupabaseBrowserClient } from "@/utils/supabase/broswer-client";
+import { supabase } from "@/utils/supabase/broswer-client";
 import { signUpSchema, SignUpFormData } from "@/lib/schema/signup";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,8 +21,14 @@ import { redirect } from "next/navigation";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 
-const SignUpPage = ({ className, ...props }: React.ComponentProps<"div">) => {
+const SignUpPage = ({ className }: React.ComponentProps<"div">) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -46,19 +51,21 @@ const SignUpPage = ({ className, ...props }: React.ComponentProps<"div">) => {
     redirect("/signin");
   };
 
-  const supabase = createSupabaseBrowserClient();
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`, // adjust if needed
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
   };
+
+  if (!mounted) return null;
+
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <div className={cn("flex flex-col gap-6", className)}>
           <Card>
             <CardHeader className="text-center">
               <CardTitle className="text-xl">Welcome</CardTitle>
@@ -146,6 +153,7 @@ const SignUpPage = ({ className, ...props }: React.ComponentProps<"div">) => {
                     </div>
                     <Button
                       type="submit"
+                      disabled={isLoading}
                       className={`${isLoading ? "cursor-wait" : "cursor-pointer"} w-full`}
                     >
                       {isLoading ? <Spinner message="Signing up" /> : "Sign up"}

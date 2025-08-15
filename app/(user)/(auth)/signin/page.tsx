@@ -13,18 +13,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { SignInAction } from "./signin-actions";
-import { createSupabaseBrowserClient } from "@/utils/supabase/broswer-client";
+import { supabase } from "@/utils/supabase/broswer-client";
 import { signInSchema, type SignInFormData } from "@/lib/schema/signin";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 
-const SignIn = ({ className, ...props }: React.ComponentProps<"div">) => {
+const SignIn = ({ className }: React.ComponentProps<"div">) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined,
   );
+  
   const router = useRouter();
   const {
     register,
@@ -48,12 +49,11 @@ const SignIn = ({ className, ...props }: React.ComponentProps<"div">) => {
     router.push("/");
   };
 
-  const supabase = createSupabaseBrowserClient();
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`, // adjust if needed
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
   };
@@ -61,7 +61,7 @@ const SignIn = ({ className, ...props }: React.ComponentProps<"div">) => {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <div className={cn("flex flex-col gap-6", className)}>
           <Card>
             <CardHeader className="text-center">
               <CardTitle className="text-xl">Welcome back</CardTitle>
@@ -131,7 +131,7 @@ const SignIn = ({ className, ...props }: React.ComponentProps<"div">) => {
                         </span>
                       )}
                     </div>
-                    <Button type="submit" className={`${isLoading ? "cursor-wait" : "cursor-pointer"} w-full`}>
+                    <Button type="submit" disabled={isLoading} className={`${isLoading ? "cursor-wait" : "cursor-pointer"} w-full`}>
                       {isLoading ? <Spinner message="Signing In" /> : "Sign in"}
                     </Button>
                   </div>
