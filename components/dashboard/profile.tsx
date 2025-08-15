@@ -21,7 +21,7 @@ const SidebarProfile = ({
   user: SidebarUser | null;
   collapsed: boolean;
 }) => {
-  const avatar = user?.user_metadata?.avatar_url || "/avatar.png";
+  const avatar = user?.user_metadata?.avatar_url || "/default_avatar.svg";
   const name = user?.user_metadata?.full_name || "Guest";
   const email = user?.email || "";
 
@@ -58,6 +58,7 @@ const SidebarProfile = ({
         <Link href="/me">
           <DropdownMenuItem>Profile</DropdownMenuItem>
         </Link>
+        <DropdownMenuSeparator />
         <DropdownMenuLabel>Preferences</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
