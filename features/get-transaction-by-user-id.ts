@@ -10,12 +10,14 @@ export type GetTransactionByUserId = {
   status: string;
   total_price: number;
   created_at: string;
-  needed_at: string;
-  services: {
+  needed_date: string;
+  needed_time: string;
+  service: {
+    name: string;
     size: string;
     color: boolean;
     duplex: boolean;
-    papers: {
+    paper: {
       size: string;
       type: string;
     }[];
@@ -28,7 +30,7 @@ export const getTransactionByUserId = async () => {
   const { data, error } = await supabase
     .from("transactions")
     .select(
-      "id, pages, sheets, payment_method, payment_status, notes, status, created_at, needed_at, total_price, services(name, color, duplex, price, papers(size, type))"
+      "id, pages, sheets, payment_method, payment_status, notes, status, created_at, needed_date, needed_time, total_price, service:services(name, color, duplex, price, paper:papers(size, type))"
     )
     .eq("user_id", user.user?.id)
     .order("created_at", { ascending: false });

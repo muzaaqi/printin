@@ -13,7 +13,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Transaction } from "@/features/get-all-transaction-realtime";
 import {
   Ban,
   CircleCheck,
@@ -22,70 +21,123 @@ import {
   ClockFading,
   FileInput,
   Mail,
+  NotepadText,
   Phone,
   QrCode,
-  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import {
   formatDateShortStriped,
-  formatDateTime,
   formatTime24,
 } from "@/utils/formatter/datetime";
+import { Transaction } from "@/features/get-all-transaction-realtime";
+import { formatIDR } from "@/utils/formatter/currency";
 
 const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
-  const formatIDR = (n: number | null) =>
-    n == null ? "-" : `Rp ${n.toLocaleString("id-ID")}`;
   return (
     <>
-      <Card className="w-fit max-w-md">
+      <Card className="w-fit max-w-md transition-all">
         <CardHeader>
-          <CardTitle>{transaction.services.name}</CardTitle>
+          <CardTitle>{transaction.service.name}</CardTitle>
           <CardAction>
             <div
-              className={`flex items-center gap-1 text-center text-sm font-semibold ${
-                transaction.paymentStatus === "Pending"
-                  ? "bg-pending-background dark:bg-pending-background/40 text-pending-foreground rounded-md px-2 py-1"
-                  : "bg-complete-background dark:bg-complete-background/40 text-complete-foreground rounded-md px-2 py-1"
+              className={`flex items-center gap-1 rounded-md px-2 py-1.5 text-center text-sm font-semibold ${
+                transaction.payment_status === "Pending"
+                  ? "bg-pending-background dark:bg-pending-background/40 text-pending-foreground"
+                  : "bg-complete-background dark:bg-complete-background/40 text-complete-foreground"
               }`}
             >
-              {transaction.paymentStatus === "Pending" ? (
+              {transaction.payment_status === "Pending" ? (
                 <CircleDashed size={16} />
               ) : (
                 <CircleCheck size={16} />
               )}
-              {transaction.paymentStatus}
+              {transaction.payment_status}
             </div>
           </CardAction>
-          <CardDescription>
-            {formatDateTime(transaction.createdAt)}
+          <CardDescription className="">
+            <Popover>
+              <PopoverTrigger asChild>
+                <p className="flex cursor-pointer items-center gap-1 font-semibold">
+                  {
+                    <Image
+                      alt="User Avatar"
+                      width={18}
+                      height={18}
+                      className="rounded-full"
+                      src={
+                        transaction.profile.avatar_url || "/default_avatar.svg"
+                      }
+                    />
+                  }{" "}
+                  {transaction.profile.full_name.length > 15
+                    ? transaction.profile.full_name.slice(0, 15) + "..."
+                    : transaction.profile.full_name}
+                </p>
+              </PopoverTrigger>
+              <PopoverContent className="flex w-full flex-row gap-4">
+                <div className="flex items-center">
+                  <Image
+                    alt="User Avatar"
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                    src={
+                      transaction.profile.avatar_url || "/default_avatar.svg"
+                    }
+                  />
+                </div>
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex items-center justify-center gap-2 text-center">
+                    <Mail size={16} />
+                    <Link
+                      href={`mailto:${transaction.profile.email}`}
+                      className="hover:underline"
+                    >
+                      {transaction.profile.email}
+                    </Link>
+                  </div>
+                  {transaction.profile.phone && (
+                    <div className="flex items-center gap-2 text-center">
+                      <Phone size={16} />
+                      <Link
+                        href={`https://wa.me/${transaction.profile.phone}`}
+                        className="hover:underline"
+                      >
+                        {transaction.profile.phone}
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 border-b pt-2">
-            <span className="text-start">Ukuran Kertas:</span>
+            <span className="text-start">Paper Size</span>
             <p className="text-end font-semibold">
-              {transaction.services.papers?.size}
+              {transaction.service.paper?.size}
             </p>
           </div>
           <div className="grid grid-cols-2 border-b pt-2">
-            <span className="text-start">Jumlah Halaman:</span>
+            <span className="text-start">Pages</span>
             <p className="place-items-end text-end font-semibold">
               {transaction.pages}
             </p>
           </div>
           <div className="grid grid-cols-2 border-b pt-2">
-            <span className="text-start">Jumlah Kertas:</span>
+            <span className="text-start">Sheets</span>
             <p className="place-items-end text-end font-semibold">
               {transaction.sheets}
             </p>
           </div>
           <div className="grid grid-cols-2 border-b pt-2">
-            <span className="text-start">Berwarna:</span>
+            <span className="text-start">Color</span>
             <p className="flex items-center justify-end font-semibold">
-              {transaction.services.color ? (
+              {transaction.service.color ? (
                 <CircleCheck size={16} className="text-complete-foreground" />
               ) : (
                 <Ban className="text-destructive" size={16} />
@@ -93,9 +145,9 @@ const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
             </p>
           </div>
           <div className="grid grid-cols-2 border-b pt-2">
-            <span className="text-start">Bolak Balik:</span>
+            <span className="text-start">Duplex</span>
             <p className="flex items-center justify-end font-semibold">
-              {transaction.services.duplex ? (
+              {transaction.service.duplex ? (
                 <CircleCheck size={16} className="text-complete-foreground" />
               ) : (
                 <Ban className="text-destructive" size={16} />
@@ -104,129 +156,100 @@ const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
           </div>
 
           <div className="grid grid-cols-2 border-b pt-2">
-            <span className="text-start">Dibutuhkan:</span>
+            <span className="text-start">Needed at</span>
             <p className="place-items-end text-end font-semibold">
-              {formatDateShortStriped(transaction.neededDate)} -{" "}
-              {formatTime24(transaction.neededTime)}
+              {formatDateShortStriped(transaction.needed_date)} -{" "}
+              {formatTime24(transaction.needed_time)}
             </p>
           </div>
           <div className="grid grid-cols-2 border-b pt-2">
-            <span className="text-start">Metode Pembayaran:</span>
-            <p className="flex items-center justify-end gap-1 text-end font-semibold">
-              {transaction.paymentMethod === "Qris" ? (
-                <QrCode size={15} />
-              ) : (
-                <CircleDollarSign size={15} />
-              )}{" "}
-              {transaction.paymentMethod}
-            </p>
+            <span className="text-start">Payment Method</span>
+            {transaction.payment_method === "Qris" ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <p className="flex cursor-pointer items-center justify-end gap-1 text-end font-semibold">
+                    <QrCode size={15} className="animate-pulse"/> QRIS
+                  </p>
+                </PopoverTrigger>
+                <PopoverContent side="top">
+                  <Image
+                    src={transaction.receipt_url}
+                    alt="Receipt"
+                    width={300}
+                    height={500}
+                    className="rounded-md"
+                  />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <p className="flex items-center justify-end gap-1 text-end font-semibold">
+                <CircleDollarSign size={15} /> Cash
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 border-b pt-2">
-            <span className="text-start">Customer:</span>
-            <p className="flex items-center justify-end gap-1 text-end font-semibold">
-              {
-                <Image
-                  alt="User Avatar"
-                  width={16}
-                  height={16}
-                  className="rounded-full"
-                  src={transaction.userAvatar || "/default_avatar.svg"}
-                />
-              }{" "}
-              {transaction.userName.length > 15
-                ? transaction.userName.slice(0, 15) + "..."
-                : transaction.userName}
+            <span className="text-start">Customer</span>
+            <p className="place-items-end text-end font-semibold">
+              {formatIDR(transaction.service.price)}
             </p>
-          </div>
-          <div className="pt-2">
-            <span>Notes</span>
-            <div className="h-24 overflow-y-auto rounded-md border px-3 py-1">
-              <p>{transaction.notes}</p>
-            </div>
           </div>
           <div className="grid grid-cols-2 pt-2">
-            <span>Total Harga:</span>
+            <span className="font-semibold">Total Price</span>
             <p className="place-items-end text-end font-semibold">
-              {formatIDR(transaction.totalPrice)}
+              {formatIDR(transaction.total_price)}
             </p>
           </div>
         </CardContent>
         <CardFooter>
-          <div className="grid w-full grid-cols-2 gap-10">
+          <div className="grid w-full grid-cols-2">
             <div className="flex gap-2">
-              <Popover>
-                <PopoverTrigger>
-                  <Button variant="outline" className="hover:underline">
-                    <Phone size={16} />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  side="top"
-                  className="flex w-full flex-row gap-4"
-                >
-                  <div className="flex items-center">
-                    <Image
-                      alt="User Avatar"
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                      src={transaction.userAvatar || "/default_avatar.svg"}
-                    />
-                  </div>
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="flex items-center gap-2 text-center">
-                      <Mail size={16} />
-                      <span>{transaction.userEmail}</span>
-                    </div>
-                    {transaction.userPhone && (
-                      <div className="flex items-center gap-2 text-center">
-                        <Phone size={16} />
-                        <span>{transaction.userPhone}</span>
-                      </div>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
-              {transaction.receiptUrl && (
+              {transaction.notes && (
                 <Popover>
-                  <PopoverTrigger>
-                    <Button variant="outline" className="hover:underline">
-                      <Receipt size={16} />
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="animate-pulse">
+                      <NotepadText size={16} />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent side="top">
-                    <Image
-                      src={transaction.receiptUrl}
-                      alt="Receipt"
-                      width={300}
-                      height={500}
-                      className="rounded-md"
-                    />
+                    <span className="font-semibold">Notes</span>
+                    <div className="overflow-y-auto rounded-md">
+                      <p>{transaction.notes}</p>
+                    </div>
                   </PopoverContent>
                 </Popover>
               )}
-              <Link href={transaction.fileUrl} target="_blank">
+              <Link
+                title="Go to File"
+                href={transaction.file_url}
+                target="_blank"
+              >
                 <Button variant="outline">
                   <FileInput />
                 </Button>
               </Link>
             </div>
-            {transaction.status === "Pending" ? (
-              <Button
-                variant="default"
-                className="bg-destructive hover:bg-destructive/80"
-              >
-                <CircleDashed /> Pending
-              </Button>
-            ) : transaction.status === "In Process" ? (
-              <Button variant="default">
-                <ClockFading /> In Process
-              </Button>
-            ) : transaction.status === "Completed" ? (
-              <Button disabled variant="secondary">
-                <CircleCheck /> Completed
-              </Button>
-            ) : null}
+            <div className="justify-self-end">
+              {transaction.status === "Pending" ? (
+                <Button
+                  variant="default"
+                  className="bg-destructive hover:bg-destructive/80 cursor-pointer"
+                >
+                  <CircleDashed /> Pending
+                </Button>
+              ) : transaction.status === "In Process" ? (
+                <Button variant="default" className="cursor-pointer">
+                  <ClockFading /> In Process
+                </Button>
+              ) : transaction.status === "Completed" ? (
+                <Button
+                  disabled
+                  variant="default"
+                  className="bg-complete-background text-accent-foreground"
+                >
+                  <CircleCheck /> Completed
+                </Button>
+              ) : null}
+            </div>
           </div>
         </CardFooter>
       </Card>

@@ -1,45 +1,43 @@
 "use client";
-import {
-  subscribeTransaction,
-  Transaction,
-} from "@/features/get-all-transaction-realtime";
 import React, { useEffect, useState } from "react";
 import TransactionCard from "./transaction-card";
+import {
+  GetAllTransactionRealtime,
+  Transaction,
+} from "@/features/get-all-transaction-realtime";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TransactionCards = () => {
-  const [transactions, setTransaction] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let unsub: (() => void) | undefined;
+    let unsubscribe: (() => void) | undefined;
 
-    subscribeTransaction((next) => {
-      setTransaction(next);
+    GetAllTransactionRealtime((data) => {
+      setTransactions(data);
       setLoading(false);
-    }).then((u) => (unsub = u));
+    }).then((unsub) => {
+      unsubscribe = unsub;
+    });
 
     return () => {
-      if (unsub) unsub();
+      if (unsubscribe) unsubscribe();
     };
   }, []);
+
   return (
     <>
-      <div className="text-muted bg-background mx-auto w-full px-4">
-        {loading ? (
-          <>
-            <h1 className="mb-8 text-center text-3xl font-bold"></h1>
-            <div className="text-md text-center">Memuat transaksi...</div>
-          </>
-        ) : transactions.length === 0 ? (
-          <div className="text-md text-center">Tidak ada transaksi.</div>
-        ) : null}
-      </div>
-      <div className="overflow-x-auto">
-        <div className="flex w-max gap-8">
-          {transactions.map((transaction) => (
-            <TransactionCard key={transaction.id} transaction={transaction} />
-          ))}
-        </div>
+      <div className="py-1 flex w-max gap-8">
+        {loading
+          ? Array.from({ length: 10 }).map((_, i) => (
+              <Skeleton key={i} className="h-118 w-80 rounded-xl" />
+            ))
+          : transactions.map((transaction) => (
+              transaction.status !== "Completed" && (
+                <TransactionCard key={transaction.id} transaction={transaction} />
+              )
+            ))}
       </div>
     </>
   );
