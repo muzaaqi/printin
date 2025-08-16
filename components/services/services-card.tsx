@@ -1,61 +1,96 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardAction,
+} from "../ui/card";
 import { Button } from "../ui/button";
 import CheckoutModal from "./checkout-modal";
-import { Service } from "@/features/get-all-services";
 import { formatIDR } from "@/utils/formatter/currency";
 import { Ban, CircleCheck } from "lucide-react";
+import { Services } from "@/features/get-all-services-realtime";
 
 const ServicesCard = ({
   service,
   isAuthenticated,
 }: {
-  service: Service;
+  service: Services;
   isAuthenticated: boolean;
 }) => {
   const [open, setOpen] = useState(false);
   return (
     <>
-        <div className="bg-card flex w-full max-w-sm flex-col space-y-3 rounded-lg border p-4 shadow-md md:space-y-4 md:p-6">
-          <div className="grid grid-cols-3 flex-col items-center gap-10 md:flex md:flex-col md:gap-0">
-            <div className="md:-h-[100px] w-[100px] md:h-[200px] md:w-[200px]">
-              <Image
-                src={service.image_url}
-                width={200}
-                height={200}
-                alt={service.name}
-                className=""
-              />
+      <div className="mx-auto w-full py-10 sm:px-6 lg:px-8">
+        <Card className="w-full">
+          <CardHeader className="flex flex-col md:items-center">
+            <div className="flex w-full justify-between md:hidden">
+              <div className="space-y-1 md:space-y-0">
+                <div>
+                  <CardTitle className="text-center text-2xl">
+                    {service.name}
+                  </CardTitle>
+                  <CardDescription>
+                    {service.paper?.size} - {service.paper?.type}
+                  </CardDescription>
+                </div>
+                <CardDescription
+                  className={`${
+                    service.paper?.sheets <= 10
+                      ? "bg-destructive"
+                      : "bg-accent-foreground"
+                  } text-accent text-xs w-fit rounded-md px-2 py-1 font-semibold md:hidden`}
+                >
+                  {service.paper?.sheets
+                    ? `${service.paper?.sheets} Tersisa`
+                    : "Habis"}
+                </CardDescription>
+              </div>
+              <CardAction>
+                <Image
+                  src={service.image_url}
+                  width={68}
+                  height={100}
+                  alt={service.name}
+                  className="md:hidden"
+                />
+              </CardAction>
             </div>
-            <div className="col-span-2 md:flex md:flex-col md:items-center">
-              <h2 className="font-bold md:text-2xl">{service.name}</h2>
-              <p className="md:text-md text-muted-foreground mb-1 text-xs md:mb-3">
-                {service.papers?.size} - {service.papers?.type}
-              </p>
-              <p
+            <Image
+              src={service.image_url}
+              width={136}
+              height={200}
+              alt={service.name}
+              className="hidden md:block"
+            />
+            <div className="hidden flex-col items-center space-y-2 md:flex">
+              <CardTitle className="text-center text-2xl">
+                {service.name}
+              </CardTitle>
+              <CardDescription>
+                {service.paper?.size} - {service.paper?.type}
+              </CardDescription>
+              <CardDescription
                 className={`${
-                  service.papers?.sheets <= 10
+                  service.paper?.sheets <= 10
                     ? "bg-destructive"
                     : "bg-accent-foreground"
-                } text-accent md:text-md w-1/2 rounded-md px-2 py-1 text-center text-xs font-semibold md:w-fit`}
+                } text-accent rounded-md px-2 py-1 font-semibold`}
               >
-                {service.papers?.sheets
-                  ? `${service.papers?.sheets} Tersisa`
+                {service.paper?.sheets
+                  ? `${service.paper?.sheets} Tersisa`
                   : "Habis"}
-              </p>
+              </CardDescription>
             </div>
-          </div>
-          <div>
-            <div className="border-accent-foreground/20 flex flex-col space-y-1 rounded-lg border px-3 py-2 md:space-y-2">
-              <div className="md:text-md flex items-center justify-between border-b text-sm">
-                <p>Ukuran Kertas</p>
-                <p className="font-semibold">
-                  {service.papers?.size}
-                  <span className="text-muted-foreground"></span>
-                </p>
-              </div>
-              <div className="md:text-md flex items-center justify-between border-b text-sm">
+          </CardHeader>
+          <CardContent className="flex flex-row gap-2">
+            <div className="border-accent-foreground/20 flex w-full flex-col space-y-2 rounded-lg border px-3 py-2 text-xs">
+              <div className="flex items-center justify-between border-b">
                 <p>Berwarna</p>
                 <p className="font-semibold">
                   {service.color ? (
@@ -69,7 +104,7 @@ const ServicesCard = ({
                   <span className="text-muted-foreground"></span>
                 </p>
               </div>
-              <div className="md:text-md flex items-center justify-between border-b text-sm">
+              <div className="flex items-center justify-between border-b">
                 <p>Bolak Balik</p>
                 <p className="font-semibold">
                   {service.duplex ? (
@@ -83,29 +118,30 @@ const ServicesCard = ({
                   <span className="text-muted-foreground"></span>
                 </p>
               </div>
-              <div className="md:text-md flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between">
                 <p>Harga</p>
                 <p className="font-semibold">
                   {formatIDR(service.price)}
-                  <span className="text-muted-foreground">/lembar</span>
+                  <span className="text-muted-foreground">/lbr</span>
                 </p>
               </div>
             </div>
-          </div>
-          <div className="flex justify-center">
+          </CardContent>
+          <CardFooter className="flex justify-center">
             <Button
-              disabled={service.papers?.sheets === 0 || !isAuthenticated}
+              disabled={service.paper?.sheets === 0 || !isAuthenticated}
               onClick={() => setOpen(true)}
-              className={`w-full ${service.papers?.sheets === 0 || !isAuthenticated ? "cursor-not-allowed" : ""}`}
+              className={`w-full ${service.paper?.sheets === 0 || !isAuthenticated ? "cursor-not-allowed" : ""}`}
             >
-              {service.papers?.sheets === 0
+              {service.paper?.sheets === 0
                 ? "Stok Habis"
                 : !isAuthenticated
                   ? "Sign In untuk Checkout"
                   : "Checkout"}
             </Button>
-          </div>
-        </div>
+          </CardFooter>
+        </Card>
+      </div>
       <CheckoutModal
         service={service}
         open={open}

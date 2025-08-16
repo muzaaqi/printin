@@ -41,7 +41,6 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileCheck, Ban, CircleCheck } from "lucide-react";
 import { X } from "lucide-react";
 import { ChevronDownIcon } from "lucide-react";
-import { Service } from "@/features/get-all-services";
 import { toast } from "sonner";
 import { Spinner } from "../ui/spinner";
 import { formatIDR } from "@/utils/formatter/currency";
@@ -50,6 +49,7 @@ import {
   isFutureDateTime,
 } from "@/utils/formatter/datetime";
 import axios from "axios";
+import { Services } from "@/features/get-all-services-realtime";
 
 const ACCEPTED_MIME_TYPES = [
   "application/pdf",
@@ -60,10 +60,31 @@ const ACCEPTED_MIME_TYPES = [
 ];
 
 interface CheckoutModalProps {
-  service: Service;
+  service: Services;
   open: boolean;
   onClose: () => void;
 }
+
+const courierList = [
+  {
+    id: "1",
+    name: "Kurir A",
+    area: "Area A",
+    fee: 10000,
+  },
+  {
+    id: "2",
+    name: "Kurir B",
+    area: "Area B",
+    fee: 15000,
+  },
+  {
+    id: "3",
+    name: "Kurir C",
+    area: "Area C",
+    fee: 20000,
+  },
+];
 
 const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
   const [qris, setQris] = useState(false);
@@ -167,7 +188,7 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
     try {
       const formData = new FormData();
       formData.append("serviceId", service.id);
-      formData.append("paperId", service.paper_id);
+      formData.append("paperId", service.paper.id);
       formData.append("pages", String(data.pages));
       formData.append("sheets", String(sheets));
 
@@ -198,15 +219,23 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
       }
 
       resetAndClose();
-      toast.success("Transaksi berhasil disimpan!");
+      toast.success("Transaksi berhasil disimpan!", {
+        position: "top-center",
+      });
     } catch (error) {
       console.error("Submit error:", error);
 
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.error || error.message;
-        toast.error("Gagal menyimpan transaksi: " + message);
+        toast.error("Gagal menyimpan transaksi: " + message, {
+          description: "Silakan coba lagi atau hubungi dukungan.",
+          position: "top-center",
+        });
       } else {
-        toast.error("Terjadi kesalahan saat menyimpan transaksi");
+        toast.error("Terjadi kesalahan saat menyimpan transaksi", {
+          description: "Silakan coba lagi atau hubungi dukungan.",
+          position: "top-center",
+        });
       }
     } finally {
       setIsSubmitting(false);
@@ -357,7 +386,7 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                 <div className="md:text-md grid w-full grid-cols-3 gap-5 text-sm">
                   <div className="w-full justify-start text-center">
                     <span className="font-semibold">Ukuran Kertas</span>{" "}
-                    <p>{service.papers?.size}</p>
+                    <p>{service.paper?.size}</p>
                   </div>
                   <div className="w-full justify-center border-x text-center">
                     <span className="font-semibold">Berwarna</span>{" "}
@@ -395,8 +424,27 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                       type="number"
                       id="pages"
                       min={1}
-                      max={service.papers?.sheets}
-                      placeholder={`Tersisa ${service.papers?.sheets.toLocaleString()}`}
+                      max={service.paper?.sheets}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        if (value < 1) {
+                          form.setValue("pages", 1, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                        } else if (value > service.paper?.sheets) {
+                          form.setValue("pages", service.paper?.sheets, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                        } else {
+                          form.setValue("pages", value, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                        }
+                      }}
+                      placeholder={`Tersisa ${service.paper?.sheets.toLocaleString()}`}
                       className={`${
                         form.formState.errors.pages
                           ? "border-destructive focus:border-destructive"
@@ -501,6 +549,43 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                       {form.formState.errors.notes.message}
                     </span>
                   )}
+                </div>
+                <div className="mt-3 space-y-3">
+                  <Label htmlFor="payment-methods">Kurir</Label>
+
+                  <Controller
+                    name="courier"
+                    control={form.control}
+                    render={({ field }) => (
+                      <div className="space-y-2">
+                        <Select
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Pilih kurir sesuai lokasi" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {courierList.map((courier) => (
+                              <SelectItem
+                                key={courier.id}
+                                value={courier.id}
+                                className="w-full"
+                              >
+                                <span>{courier.name}</span>
+                                <span className="text-muted-foreground ml-auto">
+                                  {courier.area}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {/* Error message for payment method */}
+                        <p className="text-destructive mt-1 text-sm"></p>
+                      </div>
+                    )}
+                  />
                 </div>
                 {/* // Replace the payment method section in your checkout form with
                 this: */}
@@ -709,12 +794,12 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
           <Button
             variant={"default"}
             type="submit"
-            disabled={service.papers?.sheets === 0 || isSubmitting}
-            className={`{${service.papers?.sheets === 0 ? "cursor-not-allowed" : isSubmitting ? "cursor-wait" : ""} w-full`}
+            disabled={service.paper?.sheets === 0 || isSubmitting}
+            className={`{${service.paper?.sheets === 0 ? "cursor-not-allowed" : isSubmitting ? "cursor-wait" : ""} w-full`}
           >
             {isSubmitting ? (
               <Spinner message="Processing" />
-            ) : service.papers?.sheets > 0 ? (
+            ) : service.paper?.sheets > 0 ? (
               "Pesan"
             ) : (
               "Stok Habis"
