@@ -86,8 +86,8 @@ const PopularServices = () => {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious variant={"default"} className="absolute left-10 md:hidden backdrop-blur-md bg-muted-foreground/10 border border-muted-foreground/20" />
-        <CarouselNext variant={"default"} className="absolute right-10 md:hidden backdrop-blur-md bg-muted-foreground/10 border border-muted-foreground/20" />
+        <CarouselPrevious variant={"default"} className="absolute left-1/12 md:hidden backdrop-blur-md bg-muted-foreground/10 border border-muted-foreground/20" />
+        <CarouselNext variant={"default"} className="absolute right-1/12 md:hidden backdrop-blur-md bg-muted-foreground/10 border border-muted-foreground/20" />
       </Carousel>
     </div>
   );

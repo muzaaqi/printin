@@ -15,6 +15,7 @@ import { Minus, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 
 const formSchema = z.object({
   sheets: z.number().min(0).optional(),
@@ -45,7 +46,14 @@ const PapersCard = ({ paper }: { paper: Paper }) => {
         </CardHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent>
-            <div className="mb-2 flex justify-center text-center">
+            <div className="mb-2 flex flex-col justify-center items-center text-center">
+              <Image
+                src={paper.image_url}
+                alt={paper.brand}
+                width={136}
+                height={100}
+                className="object-contain"
+              />
               <span className="text-sm font-semibold">Remaining Sheets</span>
             </div>
             <div className="flex items-center gap-2">
@@ -73,7 +81,9 @@ const PapersCard = ({ paper }: { paper: Paper }) => {
             </div>
           </CardContent>
           <CardFooter className="mt-3">
-            <Button type="submit" className="w-full">Update</Button>
+            <Button type="submit" className="w-full">
+              Update
+            </Button>
           </CardFooter>
         </form>
       </Card>

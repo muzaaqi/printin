@@ -115,14 +115,14 @@ const receiptSchema = z
   }, "Ukuran bukti pembayaran maksimal 5MB");
 
 // Courier validation schema (for future use)
-/*
+
 const courierSchema = z.object({
   id: z.string().min(1, "Kurir wajib dipilih"),
   name: z.string().min(1, "Nama kurir tidak valid"),
   area: z.string().min(1, "Area kurir tidak valid"),
   fee: z.number().min(0, "Biaya kurir tidak valid"),
 });
-*/
+
 
 // Main checkout schema
 export const checkoutSchema = z
@@ -190,14 +190,13 @@ export const checkoutSchema = z
     receipt: receiptSchema,
 
     // Courier selection (commented for future use)
-    /*
+
     courier: z
       .string()
       .min(1, "Kurir wajib dipilih")
       .optional(),
     
     courierDetails: courierSchema.optional(),
-    */
   })
   .superRefine((data, ctx) => {
     // QRIS payment validation
