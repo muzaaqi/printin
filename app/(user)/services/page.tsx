@@ -1,26 +1,17 @@
-import ServicesCard from "@/components/services/services-card";
+import ServicesCards from "@/components/services/services_cards";
 import { getCurrentUser } from "@/features/get-current-user";
-import { getAllServices } from "@/features/get-all-services";
+import React from "react";
 
 const ServicesPage = async () => {
   const user = await getCurrentUser();
-  const services = await getAllServices();
   return (
     <div className="w-full items-center justify-center">
-      <div className="lg:max-w-screen-xl mx-auto mt-10">
+      <div className="lg:max-w-screen-xl mx-auto mt-5 lg:mt-10">
         <div className="flex flex-col mx-auto w-full text-center justify-center">
-          <h1 className="text-3xl font-bold">Services</h1>
-          <p>Choose one of our services!</p>
+          <h1 className="text-3xl font-bold">Layanan</h1>
+          <p>Pilih sesuai kebutuhan Anda!</p>
         </div>
-        <div className="flex mx-auto justify-center md:grid md:grid-cols-2 lg:grid-cols-3 px-4 sm:px-6 lg:px-8 py-10">
-          {services.map((service) => (
-            <ServicesCard
-              key={service.id}
-              service={service}
-              isAuthenticated={!!user}
-            />
-          ))}
-        </div>
+        <ServicesCards isAuthenticated={!!user} />
       </div>
     </div>
   );

@@ -23,7 +23,7 @@ const Dashboardpage = () => {
         <div className="bg-muted dark:bg-muted/20 mb-5 flex h-svh w-fit flex-col rounded-xl p-8">
           <h1 className="mb-4 text-2xl font-bold">Papers</h1>
           <div className="scrollbar-hide h-full overflow-y-auto rounded-lg">
-            <PapersCards />
+            <PapersCards className="flex w-max flex-col gap-8" skeleton="h-60 w-60" />
           </div>
         </div>
       </div>

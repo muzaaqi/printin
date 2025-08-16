@@ -4,12 +4,9 @@ import React from "react";
 
 const PapersPage = () => {
   return (
-    <div className="">
-      <div className="mb-4 flex justify-end">
-        <Button className="">Add Paper</Button>
-      </div>
-      <div className="bg-muted p-3 rounded-lg overflow-x-auto">
-        <PapersCards />
+    <div>
+      <div className="bg-muted dark:bg-muted/20 overflow-x-auto rounded-lg p-3">
+        <PapersCards className="flex w-max gap-8" skeleton="h-110 w-60" />
       </div>
     </div>
   );
