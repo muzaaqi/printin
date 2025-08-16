@@ -8,7 +8,8 @@ export type Paper = {
   sheets: number;
   brand: string;
   price: number;
-}; 
+  image_url: string;
+};
 
 
 export const GetAllPapersRealtime = async (

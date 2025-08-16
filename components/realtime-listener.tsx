@@ -11,12 +11,29 @@ export default function RealtimeListener() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!role) return;
+    const channel = supabase
+      .channel(`transactions-insert-${Date.now()}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "transactions" },
+        (payload) => console.log("Payload diterima:", payload),
+      )
+      .subscribe((status) => {
+        console.log("Channel status:", status);
+      });
 
-    console.log("Setting up realtime listener for role:", role);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+
+    // sementara jangan di-remove
+  }, []);
+
+  useEffect(() => {
+    if (role !== "admin") return; // hanya attach kalau valid
 
     const channel = supabase
-      .channel("transactions-insert-global")
+      .channel("transactions-notification")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "transactions" },
@@ -32,7 +49,7 @@ export default function RealtimeListener() {
               if (error) throw error;
 
               playNotificationSound();
-              toast.info("Pesanan baru", {
+              toast.info("Ada Pesanan Baru!", {
                 description: `${data.profiles?.full_name || "Pelanggan"} memesan ${data.services?.name || "layanan"}`,
                 duration: 5000,
                 action: {

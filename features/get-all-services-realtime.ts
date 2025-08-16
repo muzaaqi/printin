@@ -16,7 +16,7 @@ export type Services = {
   price: number;
   color: boolean;
   duplex: boolean;
-  papers: Paper;
+  paper: Paper;
 };
 
 export type Profile = {
@@ -27,7 +27,7 @@ export type Profile = {
   phone: string;
 };
 
-export const GetAllServicesRealtime = async (
+export const GetAllServicesStokRealtime = async (
   onChange: (services: Services[]) => void,
 ): Promise<Services[]> => {
   // Step 1: Ambil data awal
@@ -54,7 +54,7 @@ export const GetAllServicesRealtime = async (
     .channel("services-changes")
     .on<RealtimePostgresChangesPayload<Services>>(
       "postgres_changes",
-      { event: "*", schema: "public", table: "services" },
+      { event: "*", schema: "public", table: "papers" },
       async () => {
         // Ambil data terbaru setiap ada perubahan
         const { data: updatedData, error: updateError } = await supabase
