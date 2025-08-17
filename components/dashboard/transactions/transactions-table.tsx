@@ -27,6 +27,7 @@ import {
   CircleDashed,
   CircleDollarSignIcon,
   ClockFading,
+  Loader2,
   Mail,
   Phone,
   QrCode,
@@ -34,10 +35,28 @@ import {
 import { formatIDR } from "@/utils/formatter/currency";
 import { formatDateOnly } from "@/utils/formatter/datetime";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import axios from "axios";
 
 const TransactionsTable = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingStatus, setLoadingStatus] = useState(false);
+
+  const updateStatus = async (id: string, newStatus: string) => {
+    setLoadingStatus(true);
+    try {
+      const res = await axios.patch(`/api/transactions/update/status`, {
+        id,
+        status: newStatus,
+      });
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    } finally {
+      setLoadingStatus(false);
+      toast.success("Transaction status updated successfully");
+    }
+  };
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -96,7 +115,7 @@ const TransactionsTable = () => {
                     {
                       <Popover>
                         <PopoverTrigger asChild>
-                          <div className="flex cursor-pointer flex-row gap-2">
+                          <div className="flex cursor-pointer flex-row gap-2 pr-5">
                             <Image
                               src={
                                 transaction.profile.avatar_url
@@ -108,7 +127,7 @@ const TransactionsTable = () => {
                               alt="Profile"
                               className="rounded-full"
                             />
-                            <span>{transaction.profile.full_name}</span>
+                            <span>{transaction.profile.full_name.length > 15 ? transaction.profile.full_name.slice(0, 15) + "..." : transaction.profile.full_name}</span>
                           </div>
                         </PopoverTrigger>
                         <PopoverContent
@@ -279,19 +298,42 @@ const TransactionsTable = () => {
                   <TableCell className="justify-center">
                     {transaction.status === "Pending" ? (
                       <Button
+                        onClick={() => updateStatus(transaction.id, "In Process")}
+                        disabled={loadingStatus}
                         variant="default"
-                        className="bg-destructive hover:bg-destructive/80 w-full"
+                        className="bg-destructive hover:bg-destructive/80 w-full cursor-pointer"
                       >
-                        <CircleDashed /> Pending
+                        {loadingStatus ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <CircleDashed /> Pending
+                          </>
+                        )}
                       </Button>
                     ) : transaction.status === "In Process" ? (
-                      <Button variant="default" className="w-full">
-                        <ClockFading /> In Process
+                      <Button
+                        onClick={() => updateStatus(transaction.id, "Completed")}
+                        disabled={loadingStatus}
+                        variant="default"
+                        className="w-full cursor-pointer"
+                      >
+                        {loadingStatus ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <ClockFading /> In Process
+                          </>
+                        )}
                       </Button>
                     ) : transaction.status === "Completed" ? (
-                      <span className="bg-complete-foreground text-accent flex w-full items-center justify-center gap-2 rounded-md px-3 py-2">
-                        <CircleCheck size={16} /> Completed
-                      </span>
+                      <Button
+                        disabled
+                        variant="default"
+                        className="bg-complete-background text-accent-foreground w-full"
+                      >
+                        <CircleCheck /> Completed
+                      </Button>
                     ) : null}
                   </TableCell>
                   <TableCell className="">
