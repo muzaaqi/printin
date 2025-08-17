@@ -18,7 +18,7 @@ import { signInSchema, type SignInFormData } from "@/lib/schema/signin";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { Spinner } from "@/components/ui/spinner";
+import { Loader2 } from "lucide-react";
 
 const SignIn = ({ className }: React.ComponentProps<"div">) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -131,8 +131,16 @@ const SignIn = ({ className }: React.ComponentProps<"div">) => {
                         </span>
                       )}
                     </div>
-                    <Button type="submit" disabled={isLoading} className={`${isLoading ? "cursor-wait" : "cursor-pointer"} w-full`}>
-                      {isLoading ? <Spinner message="Signing In" /> : "Sign in"}
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className={`${isLoading ? "cursor-wait" : "cursor-pointer"} w-full`}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Sign in"
+                      )}
                     </Button>
                   </div>
                   <div className="mt-4 text-center text-sm">

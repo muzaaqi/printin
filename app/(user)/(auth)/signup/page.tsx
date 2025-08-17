@@ -19,7 +19,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
+import { Loader2 } from "lucide-react";
 
 const SignUpPage = ({ className }: React.ComponentProps<"div">) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -156,7 +156,11 @@ const SignUpPage = ({ className }: React.ComponentProps<"div">) => {
                       disabled={isLoading}
                       className={`${isLoading ? "cursor-wait" : "cursor-pointer"} w-full`}
                     >
-                      {isLoading ? <Spinner message="Signing up" /> : "Sign up"}
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Sign up"
+                      )}
                     </Button>
                   </div>
                   <div className="mt-4 text-center text-sm">
