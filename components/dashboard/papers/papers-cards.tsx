@@ -32,7 +32,11 @@ const PapersCards = ({className, skeleton} : {className?: string, skeleton?: str
           ? Array.from({ length: 10 }).map((_, i) => (
               <Skeleton key={i} className={`${skeleton} rounded-xl`} />
             ))
-          : papers.map((paper) => <PapersCard key={paper.id} paper={paper} />)}
+          : papers.length > 0 ? (
+              papers.map((paper) => <PapersCard key={paper.id} paper={paper} />)
+            ) : (
+              <p>No papers found</p>
+            )}
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardAction,
@@ -20,6 +20,7 @@ import {
   CircleDollarSign,
   ClockFading,
   FileInput,
+  Loader2,
   Mail,
   NotepadText,
   Phone,
@@ -34,8 +35,26 @@ import {
 } from "@/utils/formatter/datetime";
 import { Transaction } from "@/features/get-all-transaction-realtime";
 import { formatIDR } from "@/utils/formatter/currency";
+import axios from "axios";
+import { toast } from "sonner";
 
 const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
+  const [loading, setLoading] = useState(false);
+
+  const updateStatus = async (newStatus: string) => {
+    setLoading(true);
+    try {
+      const res = await axios.patch(`/api/transactions/update/status`, {
+        id: transaction.id,
+        status: newStatus,
+      });
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    } finally {
+      setLoading(false);
+      toast.success("Transaction status updated successfully");
+    }
+  };
   return (
     <>
       <Card className="w-fit max-w-md transition-all">
@@ -168,7 +187,7 @@ const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
               <Popover>
                 <PopoverTrigger asChild>
                   <p className="flex cursor-pointer items-center justify-end gap-1 text-end font-semibold">
-                    <QrCode size={15} className="animate-pulse"/> QRIS
+                    <QrCode size={15} className="animate-pulse" /> QRIS
                   </p>
                 </PopoverTrigger>
                 <PopoverContent side="top">
@@ -231,20 +250,39 @@ const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
             <div className="justify-self-end">
               {transaction.status === "Pending" ? (
                 <Button
+                  onClick={() => updateStatus("In Process")}
+                  disabled={loading}
                   variant="default"
-                  className="bg-destructive hover:bg-destructive/80 cursor-pointer"
+                  className={`bg-destructive hover:bg-destructive/80 w-full ${loading ? "cursor-wait" : "cursor-pointer"}`}
                 >
-                  <CircleDashed /> Pending
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CircleDashed /> Pending
+                    </>
+                  )}
                 </Button>
               ) : transaction.status === "In Process" ? (
-                <Button variant="default" className="cursor-pointer">
-                  <ClockFading /> In Process
+                <Button
+                  onClick={() => updateStatus("Completed")}
+                  disabled={loading}
+                  variant="default"
+                  className={`w-full cursor-pointer ${loading ? "cursor-wait" : "cursor-pointer"}`}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <ClockFading /> In Process
+                    </>
+                  )}
                 </Button>
               ) : transaction.status === "Completed" ? (
                 <Button
                   disabled
                   variant="default"
-                  className="bg-complete-background text-accent-foreground"
+                  className="bg-complete-background text-accent-foreground w-full"
                 >
                   <CircleCheck /> Completed
                 </Button>

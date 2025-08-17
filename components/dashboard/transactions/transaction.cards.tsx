@@ -28,16 +28,29 @@ const TransactionCards = () => {
 
   return (
     <>
-      <div className="py-1 flex w-max gap-8">
+      <div className="flex w-max gap-8 py-1">
         {loading
           ? Array.from({ length: 10 }).map((_, i) => (
               <Skeleton key={i} className="h-118 w-80 rounded-xl" />
             ))
-          : transactions.map((transaction) => (
-              transaction.status !== "Completed" && (
-                <TransactionCard key={transaction.id} transaction={transaction} />
-              )
-            ))}
+          : (() => {
+              const activeTransactions = transactions.filter(
+                (transaction) => transaction.status !== "Completed",
+              );
+
+              return activeTransactions.length === 0 ? (
+                <p className="text-muted-foreground">
+                  All transactions have been completed
+                </p>
+              ) : (
+                activeTransactions.map((transaction) => (
+                  <TransactionCard
+                    key={transaction.id}
+                    transaction={transaction}
+                  />
+                ))
+              );
+            })()}
       </div>
     </>
   );

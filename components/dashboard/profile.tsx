@@ -53,7 +53,7 @@ const SidebarProfile = ({
         <DropdownMenuLabel>Navigate</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <Link href="/">
-          <DropdownMenuItem>Nome</DropdownMenuItem>
+          <DropdownMenuItem>Home</DropdownMenuItem>
         </Link>
         <Link href="/me">
           <DropdownMenuItem>Profile</DropdownMenuItem>
