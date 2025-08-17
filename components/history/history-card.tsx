@@ -22,12 +22,13 @@ import {
   CircleDollarSign,
   ClockFading,
   History,
+  Phone,
   QrCode,
 } from "lucide-react";
 import { formatIDR } from "@/utils/formatter/currency";
-import {
-  formatDateTime,
-} from "@/utils/formatter/datetime";
+import { formatDateTime } from "@/utils/formatter/datetime";
+import Image from "next/image";
+import Link from "next/link";
 
 const HistoryCard = async () => {
   const transactions = await getTransactionByUserId();
@@ -41,7 +42,7 @@ const HistoryCard = async () => {
                 <CardTitle className="text-xl">
                   {transaction.service.name}
                 </CardTitle>
-                <CardDescription className="text-xs md:text-md">
+                <CardDescription className="md:text-md text-xs">
                   {formatDateTime(transaction.created_at)}
                 </CardDescription>
                 {transaction.status === "Pending" ? (
@@ -74,7 +75,7 @@ const HistoryCard = async () => {
                 )}
               </CardHeader>
               <CardContent className="space-y-1">
-                <div className="flex justify-between text-sm md:text-md">
+                <div className="md:text-md flex justify-between text-sm">
                   <p>Metode Pembayaran:</p>
                   <span className="flex items-center gap-1 font-semibold">
                     {transaction.payment_method === "Qris" ? (
@@ -85,9 +86,11 @@ const HistoryCard = async () => {
                     {transaction.payment_method}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm md:text-md">
+                <div className="md:text-md flex justify-between text-sm">
                   <p>Status Pembayaran:</p>
-                  <span className={`flex items-center gap-1 font-semibold ${transaction.payment_status === "Pending" ? "text-pending-foreground" : "text-complete-foreground"}`}>
+                  <span
+                    className={`flex items-center gap-1 font-semibold ${transaction.payment_status === "Pending" ? "text-pending-foreground" : "text-complete-foreground"}`}
+                  >
                     {transaction.payment_status === "Pending" ? (
                       <CircleDashed size={15} />
                     ) : (
@@ -96,20 +99,51 @@ const HistoryCard = async () => {
                     {transaction.payment_status}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm md:text-md border-b">
+                <div className="md:text-md flex justify-between text-sm">
+                  <p>Courier:</p>
+                  <Popover>
+                    <PopoverTrigger>
+                      <span className="flex items-center gap-1 font-semibold animate-pulse line-clamp-1">
+                        <Image
+                          src={
+                            transaction.courier.profile.avatar_url ||
+                            "./default_avatar.svg"
+                          }
+                          alt={transaction.courier.profile.full_name}
+                          width={18}
+                          height={18}
+                          className="rounded-full"
+                        />
+                        {transaction.courier?.profile?.full_name}
+                      </span>
+                    </PopoverTrigger>
+                    <PopoverContent>
+                      <div className="flex items-center gap-2 text-center">
+                        <Phone size={16} />
+                        <Link
+                          href={`https://wa.me/${transaction.courier?.profile?.phone}`}
+                          className="hover:underline"
+                        >
+                          {transaction.courier?.profile?.phone}
+                        </Link>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="md:text-md flex justify-between border-b text-sm">
                   <p>Harga Perlembar:</p>
                   <span className="font-semibold">
                     {formatIDR(transaction.service?.price)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm md:text-md font-semibold">
+                <div className="md:text-md flex justify-between text-sm font-semibold">
                   <p>Total Harga:</p>
                   <span className="font-semibold">
                     {formatIDR(transaction.total_price)}
                   </span>
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-between text-sm md:text-md">
+              <CardFooter className="md:text-md flex justify-between text-sm">
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline">Detail</Button>
@@ -119,25 +153,25 @@ const HistoryCard = async () => {
                       <h2 className="font-semibold">Detail Transaksi</h2>
                     </div>
                     <div className="space-y-1">
-                      <div className="flex justify-between text-sm md:text-md border-b">
+                      <div className="md:text-md flex justify-between border-b text-sm">
                         <p>Ukuran Kertas:</p>
                         <span className="font-semibold">
                           {transaction.service.paper?.size}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm md:text-md border-b">
+                      <div className="md:text-md flex justify-between border-b text-sm">
                         <p>Jumlah Halaman:</p>
                         <span className="font-semibold">
                           {transaction.pages}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm md:text-md border-b">
+                      <div className="md:text-md flex justify-between border-b text-sm">
                         <p>Jumlah Kertas:</p>
                         <span className="font-semibold">
                           {transaction.sheets}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm md:text-md border-b">
+                      <div className="md:text-md flex justify-between border-b text-sm">
                         <p>Berwarna:</p>
                         <span className="font-semibold">
                           {transaction.service.color ? (
@@ -147,7 +181,7 @@ const HistoryCard = async () => {
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm md:text-md border-b">
+                      <div className="md:text-md flex justify-between border-b text-sm">
                         <p>Bolak Balik:</p>
                         <span className="font-semibold">
                           {transaction.service.duplex ? (
@@ -158,7 +192,7 @@ const HistoryCard = async () => {
                         </span>
                       </div>
                       <div
-                        className={`${!transaction.notes ? "justify-between" : ""} flex flex-col text-sm md:text-md`}
+                        className={`${!transaction.notes ? "justify-between" : ""} md:text-md flex flex-col text-sm`}
                       >
                         <span>Catatan:</span>
                         {transaction.notes ? (
@@ -185,9 +219,11 @@ const HistoryCard = async () => {
         <div className="mx-auto flex min-h-screen flex-col place-items-center justify-center">
           <History className="text-muted-foreground h-12 w-12 -translate-y-35" />
           <p className="-translate-y-35">Tidak ada riwayat transaksi</p>
-          <Button variant="outline" className="-translate-y-30">
-            Lihat Layanan
-          </Button>
+          <Link href="/services">
+            <Button variant="outline" className="-translate-y-30">
+              Lihat Layanan
+            </Button>
+          </Link>
         </div>
       )}
     </>

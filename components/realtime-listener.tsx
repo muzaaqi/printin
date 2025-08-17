@@ -11,25 +11,6 @@ export default function RealtimeListener() {
   const router = useRouter();
 
   useEffect(() => {
-    const channel = supabase
-      .channel(`transactions-insert-${Date.now()}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "transactions" },
-        (payload) => console.log("Payload diterima:", payload),
-      )
-      .subscribe((status) => {
-        console.log("Channel status:", status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-
-    // sementara jangan di-remove
-  }, []);
-
-  useEffect(() => {
     if (role !== "admin") return; // hanya attach kalau valid
 
     const channel = supabase
