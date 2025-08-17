@@ -8,45 +8,44 @@ export async function PATCH(req: NextRequest) {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
-  if (authError || !user) {
+  if (authError || !user || user.user_metadata.role !== "admin") {
     return NextResponse.json(
       { error: "Authentication failed" },
       { status: 401 },
     );
   }
 
-  let form: FormData;
+  let id: string;
+  let transactionStatus: string;
   try {
-    form = await Promise.race([
-      req.formData(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("FormData parsing timeout")), 15000),
-      ),
-    ]);
-  } catch (parseError) {
-    console.error("FormData parsing error:", parseError);
+    const body = await req.json();
+    id = body.id;
+    transactionStatus = body.status;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const allowedStatus = ["Pending", "In Process", "Completed"];
+  if (!allowedStatus.includes(transactionStatus)) {
     return NextResponse.json(
-      { error: "Gagal memproses data form" },
+      { error: "Invalid transaction status" },
       { status: 400 },
     );
   }
-
-  const transactionId = req.nextUrl.pathname.split("/").pop();
-  const transactionStatus = form.get("status") as string;
 
   try {
     const { data, error } = await supabase
       .from("transactions")
       .update({ status: transactionStatus })
-      .eq("id", transactionId)
+      .eq("id", id)
       .single();
 
     if (error) {
-      throw error;
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json(data);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error updating transaction:", error);
     return NextResponse.json(
       { error: "Failed to update transaction" },

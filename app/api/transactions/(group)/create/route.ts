@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
 
     // Extract and validate form data
     const serviceId = form.get("serviceId") as string;
+    const courierId = form.get("courier") as string | null;
     const paperId = form.get("paperId") as string;
     const pages = Number(form.get("pages"));
     const sheets = Number(form.get("sheets"));
@@ -234,6 +235,7 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       service_id: serviceId,
       paper_id: paperId,
+      courier_id: courierId || null, // Allow null for "Diambil"
       file_url: fileUrl,
       pages,
       sheets,
