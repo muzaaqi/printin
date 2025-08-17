@@ -38,7 +38,7 @@ import { CheckoutSchema, checkoutSchema } from "@/lib/schema/checkout";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Upload, FileCheck, Ban, CircleCheck } from "lucide-react";
+import { Upload, FileCheck, Ban, CircleCheck, Loader2 } from "lucide-react";
 import { X } from "lucide-react";
 import { ChevronDownIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -50,6 +50,10 @@ import {
 } from "@/utils/formatter/datetime";
 import axios from "axios";
 import { Services } from "@/features/get-all-services-realtime";
+import {
+  Courier,
+  GetAllCouriersRealtime,
+} from "@/features/get-all-couriers-realtime";
 
 const ACCEPTED_MIME_TYPES = [
   "application/pdf",
@@ -65,27 +69,6 @@ interface CheckoutModalProps {
   onClose: () => void;
 }
 
-const courierList = [
-  {
-    id: "1",
-    name: "Kurir A",
-    area: "Area A",
-    fee: 10000,
-  },
-  {
-    id: "2",
-    name: "Kurir B",
-    area: "Area B",
-    fee: 15000,
-  },
-  {
-    id: "3",
-    name: "Kurir C",
-    area: "Area C",
-    fee: 20000,
-  },
-];
-
 const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
   const [qris, setQris] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -96,6 +79,7 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [couriers, setCouriers] = useState([]);
 
   const form = useForm<CheckoutSchema>({
     resolver: zodResolver(checkoutSchema),
@@ -187,16 +171,14 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
 
     try {
       const formData = new FormData();
+      if (needed_date) formData.append("neededDate", needed_date);
+      if (needed_time) formData.append("neededTime", needed_time);
       formData.append("serviceId", service.id);
       formData.append("paperId", service.paper.id);
       formData.append("pages", String(data.pages));
       formData.append("sheets", String(sheets));
-
-      // Send date/time separately
-      if (needed_date) formData.append("neededDate", needed_date);
-      if (needed_time) formData.append("neededTime", needed_time);
-
       formData.append("notes", data.notes || "");
+      formData.append("courier", data.courier || "");
       formData.append("price", String(service.price || 0));
       formData.append("paymentMethod", data.payment);
       formData.append("file", uploadedFile);
@@ -241,6 +223,20 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    GetAllCouriersRealtime((data) => {
+      setCouriers(data);
+    }).then((unsub) => {
+      unsubscribe = unsub;
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   const pages = form.watch("pages");
   useEffect(() => {
@@ -566,15 +562,16 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                             <SelectValue placeholder="Pilih kurir sesuai lokasi" />
                           </SelectTrigger>
                           <SelectContent>
-                            {courierList.map((courier) => (
+                            {couriers.map((courier: Courier) => (
                               <SelectItem
+                                disabled={!courier.working_status}
                                 key={courier.id}
                                 value={courier.id}
                                 className="w-full"
                               >
-                                <span>{courier.name}</span>
+                                <span>{courier.profile.full_name}</span>
                                 <span className="text-muted-foreground ml-auto">
-                                  {courier.area}
+                                  - {courier.area}
                                 </span>
                               </SelectItem>
                             ))}
@@ -791,20 +788,47 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button
-            variant={"default"}
-            type="submit"
-            disabled={service.paper?.sheets === 0 || isSubmitting}
-            className={`{${service.paper?.sheets === 0 ? "cursor-not-allowed" : isSubmitting ? "cursor-wait" : ""} w-full`}
-          >
-            {isSubmitting ? (
-              <Spinner message="Processing" />
-            ) : service.paper?.sheets > 0 ? (
-              "Pesan"
-            ) : (
-              "Stok Habis"
-            )}
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild className="w-full">
+              <Button
+                variant={"default"}
+                type="button"
+                disabled={service.paper?.sheets === 0 || isSubmitting}
+                className={`{${service.paper?.sheets === 0 ? "cursor-not-allowed" : isSubmitting ? "cursor-wait" : ""} w-full`}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : service.paper?.sheets > 0 ? (
+                  "Pesan"
+                ) : (
+                  "Stok Habis"
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Apakah kamu yakin?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Semua data yang kamu masukkan akan dikirim. Pastikan sudah
+                  benar.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+
+                {/* Tombol Confirm jadi submit form */}
+                <AlertDialogAction asChild>
+                  <button
+                    type="submit"
+                    form="checkout-form" // referensi ke form id
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
+                  >
+                    Konfirmasi
+                  </button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </form>
       </div>
     </div>
