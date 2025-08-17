@@ -19,14 +19,6 @@ export type Services = {
   paper: Paper;
 };
 
-export type Profile = {
-  id: string;
-  email: string;
-  avatar_url: string;
-  full_name: string;
-  phone: string;
-};
-
 export const GetAllServicesStokRealtime = async (
   onChange: (services: Services[]) => void,
 ): Promise<Services[]> => {
@@ -37,7 +29,7 @@ export const GetAllServicesStokRealtime = async (
       `
         *,
         paper:papers(*)
-      `
+      `,
     )
     .order("created_at", { ascending: false });
 
@@ -50,8 +42,9 @@ export const GetAllServicesStokRealtime = async (
   onChange(data as Services[]);
 
   // Step 2: Buat subscription realtime
-  const channel = supabase
-    .channel("services-changes")
+  const channel = supabase.channel("services-changes");
+
+  channel
     .on<RealtimePostgresChangesPayload<Services>>(
       "postgres_changes",
       { event: "*", schema: "public", table: "papers" },

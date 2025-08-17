@@ -29,7 +29,7 @@ const ServicesCards = ({ isAuthenticated } : {isAuthenticated: boolean;}) => {
       {loading
         ? Array.from({ length: 10 }).map((_, i) => (
             <div className="mx-auto w-full py-10 sm:px-6 lg:px-8" key={i}>
-              <Skeleton className="w-100 md:w-90 h-70 md:h-130 mx-auto" />
+              <Skeleton className="w-120 md:w-90 h-70 md:h-130 mx-auto" />
             </div>
           ))
         : services.map((service) => (
