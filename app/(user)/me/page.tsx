@@ -3,11 +3,12 @@ import Image from "next/image";
 import { getCurrentUser } from "@/features/get-current-user";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/formatter/datetime";
+import Link from "next/link";
 
 const ProfilePage = async () => {
   const user = await getCurrentUser();
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center space-y-5 px-5 md:space-y-10">
+    <div className="mx-auto grid max-w-md  items-center space-y-5 px-5 md:space-y-10">
       <div className="mt-3 text-center md:mt-10">
         <h1 className="text-2xl font-bold">Profile</h1>
         <p className="text-muted-foreground">Customize Your Profile!</p>
@@ -55,6 +56,14 @@ const ProfilePage = async () => {
           </div>
         </div>
       </div>
+      <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
+        <span className="bg-background text-muted-foreground relative z-10 px-2">
+          Daftar Jadi Kurir
+        </span>
+      </div>
+      <Link href="courier/register">
+        <Button className="w-full text-xs">Daftar</Button>
+      </Link>
     </div>
   );
 };

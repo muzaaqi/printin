@@ -4,9 +4,9 @@ import React from "react";
 const HistoryPage = () => {
   return (
     <div className="min-h-screen">
-      <div className="flex flex-col items-center gap-2 p-4">
+      <div className="container flex flex-col items-center gap-2 p-4">
         <h1 className="text-2xl font-bold">History</h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm md:text-md">
           View your past transactions and activities
         </p>
       </div>

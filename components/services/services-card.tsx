@@ -29,7 +29,14 @@ const ServicesCard = ({
       <div className="mx-auto w-full py-10 sm:px-6 lg:px-8">
         <Card className="w-full">
           <CardHeader className="flex flex-col md:items-center">
-            <div className="flex w-full justify-between md:hidden">
+            <div className="flex w-full gap-5 md:hidden">
+              <Image
+                src={service.image_url}
+                width={68}
+                height={100}
+                alt={service.name}
+                className="md:hidden"
+              />
               <div className="space-y-1 md:space-y-0">
                 <div>
                   <CardTitle className="text-center text-2xl">
@@ -44,22 +51,13 @@ const ServicesCard = ({
                     service.paper?.sheets <= 10
                       ? "bg-destructive"
                       : "bg-accent-foreground"
-                  } text-accent text-xs w-fit rounded-md px-2 py-1 font-semibold md:hidden`}
+                  } text-accent w-fit rounded-md px-2 py-1 text-xs font-semibold md:hidden`}
                 >
                   {service.paper?.sheets
                     ? `${service.paper?.sheets} Tersisa`
                     : "Habis"}
                 </CardDescription>
               </div>
-              <CardAction>
-                <Image
-                  src={service.image_url}
-                  width={68}
-                  height={100}
-                  alt={service.name}
-                  className="md:hidden"
-                />
-              </CardAction>
             </div>
             <Image
               src={service.image_url}
@@ -89,7 +87,7 @@ const ServicesCard = ({
             </div>
           </CardHeader>
           <CardContent className="flex flex-row gap-2">
-            <div className="border-accent-foreground/20 flex w-full flex-col space-y-2 rounded-lg border px-3 py-2 text-xs">
+            <div className="border-accent-foreground/20 flex w-full flex-col space-y-2 rounded-lg border px-3 py-2 text-sm">
               <div className="flex items-center justify-between border-b">
                 <p>Berwarna</p>
                 <p className="font-semibold">

@@ -31,7 +31,6 @@ export type GetTransactionByUserId = {
   }[];
 }[];
 
-
 export const getTransactionByUserId = async () => {
   const supabase = await createSupabaseServerClient();
   const { data: user } = await supabase.auth.getUser();

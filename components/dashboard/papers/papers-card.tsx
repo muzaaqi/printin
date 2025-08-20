@@ -93,17 +93,21 @@ const PapersCard = ({ paper }: { paper: Paper }) => {
               <span className="text-sm font-semibold">Remaining Sheets</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="bg-input text-input-foreground flex items-center justify-center rounded-md px-2 py-1.5">
-                {paper.sheets}
-              </span>
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => setIsPlus(!isPlus)}
-                disabled={loading}
-              >
-                {isPlus ? <Plus /> : <Minus />}
-              </Button>
+              <div className="grid grid-cols-2 items-center gap-2">
+                <span
+                  className={`bg-input text-input-foreground flex items-center justify-center rounded-md px-2 py-1.5 ${paper.sheets <= 10 ? "text-destructive" : ""}`}
+                >
+                  {paper.sheets}
+                </span>
+                <Button
+                  variant={isPlus ? "default" : "destructive"}
+                  type="button"
+                  onClick={() => setIsPlus(!isPlus)}
+                  disabled={loading}
+                >
+                  {isPlus ? <Plus /> : <Minus />}
+                </Button>
+              </div>
               <Input
                 {...form.register("sheets", { valueAsNumber: true })}
                 className="w-20 text-center"

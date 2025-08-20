@@ -8,8 +8,6 @@ export type GetAllPapers = {
   type: string;
   price: number;
   sheets: number;
-  created_at: string;
-  updated_at: string;
 }[];
 
 export const getAllPapers = async () => {

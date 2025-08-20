@@ -42,7 +42,6 @@ import { Upload, FileCheck, Ban, CircleCheck, Loader2 } from "lucide-react";
 import { X } from "lucide-react";
 import { ChevronDownIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Spinner } from "../ui/spinner";
 import { formatIDR } from "@/utils/formatter/currency";
 import {
   formatForDatabase,
@@ -423,12 +422,7 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                       max={service.paper?.sheets}
                       onChange={(e) => {
                         const value = Number(e.target.value);
-                        if (value < 1) {
-                          form.setValue("pages", 1, {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          });
-                        } else if (value > service.paper?.sheets) {
+                        if (value > service.paper?.sheets) {
                           form.setValue("pages", service.paper?.sheets, {
                             shouldDirty: true,
                             shouldValidate: true,
@@ -491,7 +485,6 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                                     "0",
                                   );
                                   const yyyyMmDd = `${yyyy}-${mm}-${dd}`;
-
                                   form.setValue("datePart", yyyyMmDd, {
                                     shouldDirty: true,
                                     shouldValidate: true,
@@ -548,7 +541,6 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                 </div>
                 <div className="mt-3 space-y-3">
                   <Label htmlFor="payment-methods">Kurir</Label>
-
                   <Controller
                     name="courier"
                     control={form.control}
@@ -577,17 +569,12 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                             ))}
                           </SelectContent>
                         </Select>
-
-                        {/* Error message for payment method */}
                         <p className="text-destructive mt-1 text-sm"></p>
                       </div>
                     )}
                   />
                 </div>
-                {/* // Replace the payment method section in your checkout form with
-                this: */}
                 <div className={`${qris && "grid grid-cols-2 gap-5"} mt-3`}>
-                  {/* Payment Method Select */}
                   <div className="space-y-3">
                     <Label htmlFor="payment-methods">Metode Pembayaran *</Label>
 
@@ -625,8 +612,6 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                               <SelectItem value="Cash">Cash</SelectItem>
                             </SelectContent>
                           </Select>
-
-                          {/* Error message for payment method */}
                           {fieldState.error && (
                             <p className="text-destructive mt-1 text-sm">
                               {fieldState.error.message}
@@ -636,13 +621,11 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                       )}
                     />
                   </div>
-
-                  {/* QRIS Receipt Upload */}
                   {qris && (
                     <div className="space-y-3">
                       <Label htmlFor="qris-receipt">Bukti Pembayaran *</Label>
                       <Controller
-                        name="receipt" // ⬅️ ganti jadi receipt
+                        name="receipt"
                         control={form.control}
                         render={({ field }) => (
                           <Input
@@ -658,13 +641,12 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                               const files = e.target.files
                                 ? Array.from(e.target.files)
                                 : [];
-                              field.onChange(files); // simpan di form
+                              field.onChange(files);
                               form.trigger("receipt");
                             }}
                           />
                         )}
                       />
-                      {/* Error message for QRIS receipt */}
                       {form.formState.errors.receipt && (
                         <p className="text-destructive mt-1 text-sm">
                           {typeof form.formState.errors.receipt?.message ===
@@ -815,12 +797,10 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Batal</AlertDialogCancel>
-
-                {/* Tombol Confirm jadi submit form */}
                 <AlertDialogAction asChild>
                   <button
                     type="submit"
-                    form="checkout-form" // referensi ke form id
+                    form="checkout-form"
                     className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
                   >
                     Konfirmasi

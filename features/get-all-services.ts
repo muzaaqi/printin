@@ -15,7 +15,7 @@ export interface Service {
     type: string;
     sheets: number;
     price: number;
-  } // pakai null jika mungkin belum ada paper terkait
+  }; // pakai null jika mungkin belum ada paper terkait
 }
 
 export type GetAllServices = Service[];
@@ -25,7 +25,7 @@ export const getAllServices = async () => {
   const { data, error } = await supabase
     .from("services")
     .select(
-      "id, paper_id, name, image_url, price, color, duplex, paper:papers(brand, price, size, type, sheets)"
+      "id, paper_id, name, image_url, price, color, duplex, paper:papers(brand, price, size, type, sheets)",
     );
 
   if (error) {

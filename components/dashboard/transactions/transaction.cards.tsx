@@ -39,9 +39,11 @@ const TransactionCards = () => {
               );
 
               return activeTransactions.length === 0 ? (
-                <p className="text-muted-foreground">
-                  All transactions have been completed
-                </p>
+                <div className="h-118 w-7xl mx-auto self-center flex flex-col items-center justify-center">
+                  <p className="text-muted-foreground">
+                    All transactions have been completed
+                  </p>
+                </div>
               ) : (
                 activeTransactions.map((transaction) => (
                   <TransactionCard
