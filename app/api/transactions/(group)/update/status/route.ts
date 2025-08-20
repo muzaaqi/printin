@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const { data, error } = await supabase
       .from("transactions")
-      .update({ status: transactionStatus })
+      .update({ status: transactionStatus, updated_at: new Date() })
       .eq("id", id)
       .single();
 

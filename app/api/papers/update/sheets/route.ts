@@ -26,7 +26,7 @@ export async function PATCH(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("papers")
-    .update({ sheets: totalSheets })
+    .update({ sheets: totalSheets, updated_at: new Date() })
     .eq("id", paperId)
     .select();
 
