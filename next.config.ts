@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
       {
         hostname: "dnwzgwqdjfouylioejpn.supabase.co",
       },
+      {
+        hostname: "storage.muzaaqi.my.id",
+      },
     ],
   },
 };
