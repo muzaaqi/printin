@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/utils/supabase/server-client";
+import { uploadToR2 } from "@/features/upload-to-r2";
+import { r2 } from "@/lib/r2";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 // Tambahkan config untuk Next.js 15
 export const runtime = "nodejs";
@@ -170,68 +173,114 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Upload main file
     const timestamp = Date.now();
+    const transactionId = `ORDER-${timestamp}`;
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const docPath = `${user.id}/${timestamp}-${sanitizedFileName}`;
+    const docPath = `${user.id}-${user.user_metadata.full_name}/${transactionId}/FILE-${sanitizedFileName}`;
 
-    const { error: upErr } = await supabase.storage
-      .from("transactions-files")
-      .upload(docPath, file, {
-        upsert: false,
-        contentType: file.type,
-      });
+    // const { error: upErr } = await supabase.storage
+    //   .from("transactions-files")
+    //   .upload(docPath, file, {
+    //     upsert: false,
+    //     contentType: file.type,
+    //   });
 
-    if (upErr) {
-      console.error("File upload error:", upErr);
+    // if (upErr) {
+    //   console.error("File upload error:", upErr);
+    //   return NextResponse.json(
+    //     { error: "Gagal mengupload file dokumen" },
+    //     { status: 500 },
+    //   );
+    // }
+
+    // const fileUrl = supabase.storage
+    //   .from("transactions-files")
+    //   .getPublicUrl(docPath).data.publicUrl;
+
+    // // Upload receipt if needed
+    // let receiptUrl: string | null = null;
+    // if (paymentMethod === "Qris" && receipt) {
+    //   if (receipt.size > 5 * 1024 * 1024) {
+    //     // 5MB for receipts
+    //     return NextResponse.json(
+    //       { error: "Bukti pembayaran terlalu besar (maksimal 5MB)" },
+    //       { status: 400 },
+    //     );
+    //   }
+
+    //   const sanitizedReceiptName = receipt.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+    //   const rPath = `${user.id}/${timestamp}-receipt-${sanitizedReceiptName}`;
+
+    //   const { error: rErr } = await supabase.storage
+    //     .from("transactions-receipts")
+    //     .upload(rPath, receipt, {
+    //       upsert: false,
+    //       contentType: receipt.type,
+    //     });
+
+    //   if (rErr) {
+    //     console.error("Receipt upload error:", rErr);
+    //     // Delete uploaded document if receipt fails
+    //     await supabase.storage.from("transactions-files").remove([docPath]);
+    //     return NextResponse.json(
+    //       { error: "Gagal mengupload bukti pembayaran" },
+    //       { status: 500 },
+    //     );
+    //   }
+
+    //   receiptUrl = supabase.storage
+    //     .from("transactions-receipts")
+    //     .getPublicUrl(rPath).data.publicUrl;
+    // }
+
+    const bucketName = "ngeprint-file-storage";
+    // Upload dokumen
+    let fileUrl: string;
+
+    try {
+      fileUrl = await uploadToR2(docPath, file);
+    } catch (err) {
+      console.error("File upload error:", err);
       return NextResponse.json(
         { error: "Gagal mengupload file dokumen" },
         { status: 500 },
       );
     }
 
-    const fileUrl = supabase.storage
-      .from("transactions-files")
-      .getPublicUrl(docPath).data.publicUrl;
-
-    // Upload receipt if needed
+    // Upload receipt jika ada
     let receiptUrl: string | null = null;
     if (paymentMethod === "Qris" && receipt) {
       if (receipt.size > 5 * 1024 * 1024) {
-        // 5MB for receipts
         return NextResponse.json(
           { error: "Bukti pembayaran terlalu besar (maksimal 5MB)" },
           { status: 400 },
         );
       }
 
-      const sanitizedReceiptName = receipt.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-      const rPath = `${user.id}/${timestamp}-receipt-${sanitizedReceiptName}`;
+      try {
+        const rPath = `${user.id}-${user.user_metadata.full_name}/${transactionId}/RECEIPT-${receipt.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+        receiptUrl = await uploadToR2(rPath, receipt);
+      } catch (err) {
+        console.error("Receipt upload error:", err);
 
-      const { error: rErr } = await supabase.storage
-        .from("transactions-receipts")
-        .upload(rPath, receipt, {
-          upsert: false,
-          contentType: receipt.type,
-        });
+        // rollback dokumen kalau receipt gagal
+        await r2.send(
+          new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: docPath,
+          }),
+        );
 
-      if (rErr) {
-        console.error("Receipt upload error:", rErr);
-        // Delete uploaded document if receipt fails
-        await supabase.storage.from("transactions-files").remove([docPath]);
         return NextResponse.json(
           { error: "Gagal mengupload bukti pembayaran" },
           { status: 500 },
         );
       }
-
-      receiptUrl = supabase.storage
-        .from("transactions-receipts")
-        .getPublicUrl(rPath).data.publicUrl;
     }
 
     // Insert transaction
     const insertData = {
+      id: transactionId,
       user_id: user.id,
       service_id: serviceId,
       paper_id: paperId,

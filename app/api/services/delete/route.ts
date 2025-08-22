@@ -17,6 +17,24 @@ export async function DELETE(req: NextRequest) {
 
   const { id } = await req.json();
 
+  const { data: service, error: serviceError } = await supabase
+    .from("services")
+    .select("image_path")
+    .eq("id", id)
+    .single();
+
+  if (serviceError || !service) {
+    return NextResponse.json({ error: serviceError?.message || "Service not found" }, { status: 500 });
+  }
+
+  const { error: storageError } = await supabase.storage
+    .from("ngeprint-assets")
+    .remove([service.image_path]);
+
+  if (storageError) {
+    return NextResponse.json({ error: storageError.message }, { status: 500 });
+  }
+
   try {
     const { data, error } = await supabase
       .from("services")

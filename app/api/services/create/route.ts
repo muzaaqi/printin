@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
 
   const name = formData.get("name") as string;
   const paperId = formData.get("paperId") as string;
-  const color = Boolean(formData.get("color"));
-  const duplex = Boolean(formData.get("duplex"));
+  const color = formData.get("color") === "true";
+  const duplex = formData.get("duplex") === "true";
   const image = formData.get("image") as File | null;
   const price = Number(formData.get("price"));
 
@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
       upsert: false,
       contentType: image.type,
     });
+
+  console.log(uploadError)
 
   if (uploadError) {
     return NextResponse.json(
