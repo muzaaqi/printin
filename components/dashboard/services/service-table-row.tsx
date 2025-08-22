@@ -30,7 +30,6 @@ import axios from "axios";
 import { toast } from "sonner";
 import { Paper } from "@/features/get-all-papers-realtime";
 import { Button } from "@/components/ui/button";
-import { ServiceRefs } from "./services-table";
 
 const ServiceTableRow = ({
   service,
@@ -43,53 +42,40 @@ const ServiceTableRow = ({
 }) => {
   const [isEdit, setIsEdit] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    id: service.id,
+    name: service.name,
+    paperId: service.paper.id,
+    color: service.color ? "true" : "false",
+    duplex: service.duplex ? "true" : "false",
+    image: null as File | null,
+    price: service.price,
+  });
 
-  const refs: ServiceRefs = {
-    name: useRef<HTMLInputElement>(null),
-    paperId: useRef<HTMLInputElement>(null),
-    color: useRef<HTMLInputElement>(null),
-    duplex: useRef<HTMLInputElement>(null),
-    image: useRef<HTMLInputElement>(null),
-    price: useRef<HTMLInputElement>(null),
+  const handleChange = (name: string, value: string | File | null) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const onUpdate = async () => {
-      setLoading(true);
-      const values = Object.fromEntries(
-        Object.entries(refs).map(([key, ref]) => {
-          if (key === "image") {
-            return [key, ref.current?.files?.[0] || null]; // file asli
-          }
-          return [key, ref.current?.value || ""];
-        }),
-      );
-  
-      try {
-        const formData = new FormData();
-        Object.entries(values).forEach(([key, val]) => {
-          if (val !== null) {
-            formData.append(key, val);
-          }
-        });
-        formData.append("id", service.id);
-  
-        const res = await axios.patch("/api/service/update", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-  
-        if (res.status === 200) {
-          toast.success("Service updated successfully");
-          setIsEdit(false);
-        } else {
-          toast.error("Failed to update service");
-        }
-      } catch (error) {
-        console.error("Error updating service:", error);
-        toast.error("Error updating service");
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    try {
+      const res = await axios.patch("/api/service/update", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (res.status === 200) {
+        toast.success("Service updated successfully");
+        setIsEdit(false);
+      } else {
+        toast.error("Failed to update service");
       }
-    };
+    } catch (error) {
+      console.error("Error updating service:", error);
+      toast.error("Error updating service");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onDelete = async () => {
     setLoading(true);
@@ -116,7 +102,8 @@ const ServiceTableRow = ({
             className="w-fit border-none ring-0 focus:border-none focus:ring-0"
             type="text"
             defaultValue={service.name}
-            ref={refs.name}
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
           />
         ) : (
           service.name
@@ -124,7 +111,10 @@ const ServiceTableRow = ({
       </TableCell>
       {isEdit ? (
         <TableCell colSpan={2}>
-          <Select>
+          <Select
+            value={formData.paperId}
+            onValueChange={(value) => handleChange("paperId", value)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue></SelectValue>
             </SelectTrigger>
@@ -147,13 +137,16 @@ const ServiceTableRow = ({
       )}
       <TableCell className="text-center">
         {isEdit ? (
-          <Select>
+          <Select
+            value={formData.color}
+            onValueChange={(value) => handleChange("color", value)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue></SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={"true"}></SelectItem>
-              <SelectItem value={"false"}></SelectItem>
+              <SelectItem value={"true"}>TRUE</SelectItem>
+              <SelectItem value={"false"}>FALSE</SelectItem>
             </SelectContent>
           </Select>
         ) : (
@@ -168,13 +161,16 @@ const ServiceTableRow = ({
       </TableCell>
       <TableCell className="text-center">
         {isEdit ? (
-          <Select>
+          <Select
+            value={formData.duplex}
+            onValueChange={(value) => handleChange("duplex", value)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue></SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={"true"}></SelectItem>
-              <SelectItem value={"false"}></SelectItem>
+              <SelectItem value={"true"}>TRUE</SelectItem>
+              <SelectItem value={"false"}>FALSE</SelectItem>
             </SelectContent>
           </Select>
         ) : (
@@ -189,7 +185,10 @@ const ServiceTableRow = ({
       </TableCell>
       <TableCell className="text-center">
         {isEdit ? (
-          <Input type="file" ref={refs.image}/>
+          <Input
+            type="file"
+            onChange={(e) => handleChange("image", e.target.files?.[0] || null)}
+          />
         ) : (
           <Popover>
             <PopoverTrigger asChild>
@@ -215,62 +214,67 @@ const ServiceTableRow = ({
             className="w-fit border-none ring-0 focus:border-none focus:ring-0"
             type="text"
             defaultValue={formatIDR(service.price)}
-            ref={refs.price}
+            value={formData.price}
+            onChange={(e) => handleChange("price", e.target.value)}
           />
         ) : (
           formatIDR(service.price)
         )}
       </TableCell>
       <TableCell className="flex justify-center text-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <EllipsisVertical size={16} />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Action</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {isEdit ? (
-              <>
-                <DropdownMenuItem asChild onClick={onUpdate}>
-                  <button className="w-full" type="submit" disabled={loading}>
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <EllipsisVertical size={16} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Action</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {isEdit ? (
+                <>
+                  <DropdownMenuItem asChild onClick={onUpdate}>
+                    <button className="w-full" type="submit" disabled={loading}>
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Save"
+                      )}
+                    </button>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={loading}
+                    onClick={() => setIsEdit(false)}
+                    className="text-destructive"
+                  >
+                    Cancel
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem
+                    disabled={loading}
+                    onClick={() => setIsEdit(true)}
+                  >
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={loading}
+                    className="text-destructive"
+                    onClick={onDelete}
+                  >
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Save"
+                      "Delete"
                     )}
-                  </button>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={loading}
-                  onClick={() => setIsEdit(false)}
-                  className="text-destructive"
-                >
-                  Cancel
-                </DropdownMenuItem>
-              </>
-            ) : (
-              <>
-                <DropdownMenuItem
-                  disabled={loading}
-                  onClick={() => setIsEdit(true)}
-                >
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={loading}
-                  className="text-destructive"
-                  onClick={onDelete}
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Delete"
-                  )}
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </TableCell>
     </TableRow>
   );

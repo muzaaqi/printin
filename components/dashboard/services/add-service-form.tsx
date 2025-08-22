@@ -10,28 +10,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ServiceRefs } from "./services-table";
 import { GetAllPapers } from "@/features/get-all-papers";
 
 const AddServiceForm = ({
-  serviceRefs,
+  formData,
+  setFormData,
   loadingAddService,
   papers,
   handleSave,
 }: {
-  serviceRefs: ServiceRefs;
+  formData: {
+    name: string | null;
+    paperId: string | null;
+    color: string | null;
+    duplex: string | null;
+    image: File | null;
+    price: string | null;
+  };
+  setFormData: React.Dispatch<
+    React.SetStateAction<{
+      name: string | null;
+      paperId: string | null;
+      color: string | null;
+      duplex: string | null;
+      image: File | null;
+      price: string | null;
+    }>
+  >;
   handleSave: () => Promise<void>;
   loadingAddService: boolean;
   papers: GetAllPapers;
 }) => {
+  const handleChange = (name: string, value: string | File | null) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
   return (
     <TableRow>
       <TableCell className="text-center">New</TableCell>
       <TableCell>
-        <Input type="text" ref={serviceRefs.name} placeholder="Name" />
+        <Input
+          type="text"
+          placeholder="Name"
+          value={formData.name || ""}
+          onChange={(e) => handleChange("name", e.target.value)}
+        />
       </TableCell>
       <TableCell colSpan={2}>
-        <Select onValueChange={(value) => (serviceRefs.paperId.current!.value = value)}>
+        <Select
+          value={formData.paperId || ""}
+          onValueChange={(value) => handleChange("paperId", value)}
+        >
           <SelectTrigger className="w-full">
             <SelectValue></SelectValue>
           </SelectTrigger>
@@ -45,7 +73,10 @@ const AddServiceForm = ({
         </Select>
       </TableCell>
       <TableCell>
-        <Select onValueChange={(value) => (serviceRefs.color.current!.value = value)}>
+        <Select
+          value={formData.color || ""}
+          onValueChange={(value) => handleChange("color", value)}
+        >
           <SelectTrigger className="w-full">
             <SelectValue></SelectValue>
           </SelectTrigger>
@@ -56,7 +87,10 @@ const AddServiceForm = ({
         </Select>
       </TableCell>
       <TableCell>
-        <Select onValueChange={(value) => (serviceRefs.duplex.current!.value = value)}>
+        <Select
+          value={formData.duplex || ""}
+          onValueChange={(value) => handleChange("duplex", value)}
+        >
           <SelectTrigger className="w-full">
             <SelectValue></SelectValue>
           </SelectTrigger>
@@ -67,15 +101,28 @@ const AddServiceForm = ({
         </Select>
       </TableCell>
       <TableCell>
-        <Input type="file" ref={serviceRefs.image} placeholder="Image" />
-      </TableCell>
-      <TableCell>
-        <Input type="number" ref={serviceRefs.price} placeholder="Price" />
+        <Input
+          type="file"
+          placeholder="Image"
+          onChange={(e) => handleChange("image", e.target.files?.[0] || null)}
+        />
       </TableCell>
       <TableCell></TableCell>
+      <TableCell>
+        <Input
+          type="number"
+          placeholder="Price"
+          value={formData.price || ""}
+          onChange={(e) => handleChange("price", e.target.value)}
+        />
+      </TableCell>
       <TableCell className="text-center">
-        <Button onClick={() => handleSave()} disabled={loadingAddService}>
-          {loadingAddService ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+        <Button onClick={() => handleSave()} disabled={loadingAddService || !formData.name || !formData.paperId || !formData.color || !formData.duplex || !formData.image || !formData.price}>
+          {loadingAddService ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            "Add"
+          )}
         </Button>
       </TableCell>
     </TableRow>

@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/popover";
 import { Paper } from "@/features/get-all-papers-realtime";
 import Image from "next/image";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,42 +20,29 @@ import { EllipsisVertical, Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { PaperRefs } from "./papers-table";
 import { formatIDR } from "@/utils/formatter/currency";
 
 const PapersTableRow = ({ paper, index }: { paper: Paper; index: number }) => {
   const [isEdit, setIsEdit] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [formData, setFormData] = useState({
+    id: paper.id,
+    brand: paper.brand,
+    size: paper.size,
+    type: paper.type,
+    image: null as File | null,
+    price: paper.price,
+    sheets: paper.sheets,
+  });
 
-  const refs: PaperRefs = {
-      brand: useRef<HTMLInputElement>(null),
-      size: useRef<HTMLInputElement>(null),
-      type: useRef<HTMLInputElement>(null),
-      image: useRef<HTMLInputElement>(null),
-      price: useRef<HTMLInputElement>(null),
-      sheets: useRef<HTMLInputElement>(null),
-    };
+  const handleChange = (name: string, value: string | File | null) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const onUpdate = async () => {
     setLoading(true);
-    const values = Object.fromEntries(
-      Object.entries(refs).map(([key, ref]) => {
-        if (key === "image") {
-          return [key, ref.current?.files?.[0] || null]; // file asli
-        }
-        return [key, ref.current?.value || ""];
-      }),
-    );
 
     try {
-      const formData = new FormData();
-      Object.entries(values).forEach(([key, val]) => {
-        if (val !== null) {
-          formData.append(key, val);
-        }
-      });
-      formData.append("id", paper.id);
-
       const res = await axios.patch("/api/papers/update/data", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -93,20 +80,43 @@ const PapersTableRow = ({ paper, index }: { paper: Paper; index: number }) => {
       <TableCell className="text-center">{index + 1}</TableCell>
       <TableCell className="text-center">
         {isEdit ? (
-          <Input defaultValue={paper.brand} ref={refs.brand} />
+          <Input
+            defaultValue={paper.brand}
+            value={formData.brand}
+            onChange={(e) => handleChange("brand", e.target.value)}
+          />
         ) : (
           paper.brand
         )}
       </TableCell>
       <TableCell className="text-center">
-        {isEdit ? <Input defaultValue={paper.size} ref={refs.size} /> : paper.size}
-      </TableCell>
-      <TableCell className="text-center">
-        {isEdit ? <Input defaultValue={paper.type} ref={refs.type} /> : paper.type}
+        {isEdit ? (
+          <Input
+            defaultValue={paper.size}
+            value={formData.size}
+            onChange={(e) => handleChange("size", e.target.value)}
+          />
+        ) : (
+          paper.size
+        )}
       </TableCell>
       <TableCell className="text-center">
         {isEdit ? (
-          <Input type="file" ref={refs.image} />
+          <Input
+            defaultValue={paper.type}
+            value={formData.type}
+            onChange={(e) => handleChange("type", e.target.value)}
+          />
+        ) : (
+          paper.type
+        )}
+      </TableCell>
+      <TableCell className="text-center">
+        {isEdit ? (
+          <Input
+            type="file"
+            onChange={(e) => handleChange("image", e.target.files?.[0] || null)}
+          />
         ) : (
           <Popover>
             <PopoverTrigger asChild>
@@ -124,61 +134,81 @@ const PapersTableRow = ({ paper, index }: { paper: Paper; index: number }) => {
         )}
       </TableCell>
       <TableCell className="text-center">
-        {isEdit ? <Input defaultValue={paper.price} ref={refs.price} /> : formatIDR(paper.price)}
+        {isEdit ? (
+          <Input
+            defaultValue={paper.sheets}
+            value={formData.sheets}
+            onChange={(e) => handleChange("sheets", e.target.value)}
+          />
+        ) : (
+          paper.sheets
+        )}
       </TableCell>
       <TableCell className="text-center">
-        {isEdit ? <Input defaultValue={paper.sheets} ref={refs.sheets} /> : paper.sheets}
+        {isEdit ? (
+          <Input
+            defaultValue={paper.price}
+            value={formData.price}
+            onChange={(e) => handleChange("price", e.target.value)}
+          />
+        ) : (
+          formatIDR(paper.price)
+        )}
       </TableCell>
       <TableCell className="flex items-center justify-center text-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <EllipsisVertical size={16} />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Action</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {isEdit ? (
-              <>
-                <DropdownMenuItem asChild onClick={onUpdate}>
-                  <button className="w-full" type="submit" disabled={loading}>
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <EllipsisVertical size={16} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Action</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {isEdit ? (
+                <>
+                  <DropdownMenuItem asChild onClick={onUpdate}>
+                    <button className="w-full" type="submit" disabled={loading}>
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Save"
+                      )}
+                    </button>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={loading}
+                    onClick={() => setIsEdit(false)}
+                    className="text-destructive"
+                  >
+                    Cancel
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem
+                    disabled={loading}
+                    onClick={() => setIsEdit(true)}
+                  >
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={loading}
+                    className="text-destructive"
+                    onClick={onDelete}
+                  >
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Save"
+                      "Delete"
                     )}
-                  </button>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={loading}
-                  onClick={() => setIsEdit(false)}
-                  className="text-destructive"
-                >
-                  Cancel
-                </DropdownMenuItem>
-              </>
-            ) : (
-              <>
-                <DropdownMenuItem
-                  disabled={loading}
-                  onClick={() => setIsEdit(true)}
-                >
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={loading}
-                  className="text-destructive"
-                  onClick={onDelete}
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Delete"
-                  )}
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </TableCell>
     </TableRow>
   );

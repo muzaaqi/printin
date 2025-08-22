@@ -10,6 +10,7 @@ export interface Service {
   duplex: boolean;
   // Relasi ke satu paper (karena foreign key paper_id)
   paper: {
+    id: string;
     brand: string;
     size: string;
     type: string;
@@ -25,7 +26,7 @@ export const getAllServices = async () => {
   const { data, error } = await supabase
     .from("services")
     .select(
-      "id, paper_id, name, image_url, price, color, duplex, paper:papers(brand, price, size, type, sheets)",
+      "id, paper_id, name, image_url, price, color, duplex, paper:papers(id, brand, price, size, type, sheets)",
     );
 
   if (error) {
