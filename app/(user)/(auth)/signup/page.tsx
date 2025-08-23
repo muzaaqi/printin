@@ -126,6 +126,20 @@ const SignUpPage = ({ className }: React.ComponentProps<"div">) => {
                       )}
                     </div>
                     <div className="grid gap-3">
+                      <Label htmlFor="phone">Telepon</Label>
+                      <Input
+                        {...register("phone")}
+                        type="tel"
+                        placeholder="+621234567890"
+                        required
+                      />
+                      {errors.phone && (
+                        <span className="text-destructive text-sm">
+                          {errors.phone.message}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid gap-3">
                       <Label htmlFor="password">Password</Label>
                       <Input
                         {...register("password")}
