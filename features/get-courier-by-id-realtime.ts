@@ -1,6 +1,7 @@
 import { supabase } from "@/utils/supabase/broswer-client";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { Profile } from "./get-all-transactions";
+import { getCurrentUser } from "./get-current-user";
 
 export type Courier = {
   id: string;
@@ -9,9 +10,13 @@ export type Courier = {
   profile: Profile;
 };
 
-export const GetAllCouriersRealtime = async (
+export const GetCourierByIdRealtime = async (
   onChange: (couriers: Courier[]) => void,
+  userId: string
 ): Promise<Courier[]> => {
+  // const user = await getCurrentUser();
+  // const userId = user?.id;
+
   // Step 1: Ambil data awal
   const { data, error } = await supabase
     .from("couriers")
@@ -21,6 +26,7 @@ export const GetAllCouriersRealtime = async (
       profile:profiles(*)
     `,
     )
+    .eq("id", userId)
     .order("working_status", { ascending: false });
 
   if (error) {
@@ -33,7 +39,7 @@ export const GetAllCouriersRealtime = async (
 
   // Step 2: Buat subscription realtime
   const channel = supabase
-    .channel("couriers-changes")
+    .channel("working-status-changes")
     .on<RealtimePostgresChangesPayload<Courier>>(
       "postgres_changes",
       { event: "*", schema: "public", table: "couriers" },
@@ -47,6 +53,7 @@ export const GetAllCouriersRealtime = async (
             profile:profiles(*)
           `,
           )
+          .eq("id", userId)
           .order("working_status", { ascending: false });
 
         if (!updateError) {
