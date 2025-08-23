@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest) {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
-  if (authError || !user || user.user_metadata.role !== "admin") {
+  if (authError || !user || user.user_metadata.role !== "admin" || user.user_metadata.role !== "courier") {
     return NextResponse.json(
       { error: "Authentication failed" },
       { status: 401 },
@@ -25,7 +25,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const allowedStatus = ["Pending", "In Process", "Completed"];
+  const allowedStatus = ["Pending", "In Process", "Printed", "Delivering", "Delivered", "Completed"];
   if (!allowedStatus.includes(transactionStatus)) {
     return NextResponse.json(
       { error: "Invalid transaction status" },
