@@ -48,11 +48,12 @@ const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
         id: transaction.id,
         status: newStatus,
       });
+      toast.success("Transaction status updated successfully");
     } catch (err) {
+      toast.error("Failed to update transaction status");
       console.error("Failed to update status:", err);
     } finally {
       setLoading(false);
-      toast.success("Transaction status updated successfully");
     }
   };
   return (
@@ -277,14 +278,6 @@ const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
                       <ClockFading /> In Process
                     </>
                   )}
-                </Button>
-              ) : transaction.status === "Completed" ? (
-                <Button
-                  disabled
-                  variant="default"
-                  className="bg-complete-background text-accent-foreground w-full"
-                >
-                  <CircleCheck /> Completed
                 </Button>
               ) : null}
             </div>

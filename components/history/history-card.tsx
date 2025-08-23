@@ -22,8 +22,11 @@ import {
   CircleDollarSign,
   ClockFading,
   History,
+  PackageCheck,
   Phone,
+  PrinterCheck,
   QrCode,
+  Truck,
 } from "lucide-react";
 import { formatIDR } from "@/utils/formatter/currency";
 import { formatDateTime } from "@/utils/formatter/datetime";
@@ -61,6 +64,33 @@ const HistoryCard = async () => {
                     }
                   >
                     <ClockFading size={16} />
+                    {transaction.status}
+                  </CardAction>
+                ) : transaction.status === "Printed" ? (
+                  <CardAction
+                    className={
+                      "bg-complete-background/20 text-complete-foreground flex items-center gap-1 rounded-md px-2 py-1.5"
+                    }
+                  >
+                    <PrinterCheck size={16} />
+                    {transaction.status}
+                  </CardAction>
+                ) : transaction.status === "Delivering" ? (
+                  <CardAction
+                    className={
+                      "bg-delivering-background/20 text-delivering-foreground flex items-center gap-1 rounded-md px-2 py-1.5"
+                    }
+                  >
+                    <Truck size={16} />
+                    {transaction.status}
+                  </CardAction>
+                ) : transaction.status === "Delivered" ? (
+                  <CardAction
+                    className={
+                      "bg-pending-background/20 text-pending-foreground flex items-center gap-1 rounded-md px-2 py-1.5"
+                    }
+                  >
+                    <PackageCheck size={16} />
                     {transaction.status}
                   </CardAction>
                 ) : (
@@ -103,7 +133,7 @@ const HistoryCard = async () => {
                   <p>Courier:</p>
                   <Popover>
                     <PopoverTrigger>
-                      <span className="flex items-center gap-1 font-semibold animate-pulse line-clamp-1">
+                      <span className="line-clamp-1 flex animate-pulse items-center gap-1 font-semibold">
                         <Image
                           src={
                             transaction.courier.profile.avatar_url ||
@@ -208,9 +238,9 @@ const HistoryCard = async () => {
                 </Popover>
                 {transaction.payment_status === "Pending" ? (
                   <Button>Bayar Sekarang</Button>
-                ) : (
-                  <h2 className="font-semibold">Pesanan Selesai</h2>
-                )}
+                ) : transaction.status === "Delivered" ? (
+                  <Button>Selesaikan Pesanan</Button>
+                ) : <h2>Pesanan Selesai</h2> }
               </CardFooter>
             </Card>
           ))}

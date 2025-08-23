@@ -1,8 +1,5 @@
-import React, { useState } from 'react'
-import {
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
+import React, { useState } from "react";
+import { TableCell, TableRow } from "@/components/ui/table";
 import {
   Popover,
   PopoverContent,
@@ -15,35 +12,45 @@ import {
   ClockFading,
   Loader2,
   Mail,
+  PackageCheck,
   Phone,
+  PrinterCheck,
   QrCode,
+  Truck,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Transaction } from '@/features/get-all-transaction-realtime';
-import { formatDateOnly } from '@/utils/formatter/datetime';
-import { toast } from 'sonner';
-import axios from 'axios';
-import { formatIDR } from '@/utils/formatter/currency';
+import { Transaction } from "@/features/get-all-transaction-realtime";
+import { formatDateOnly } from "@/utils/formatter/datetime";
+import { toast } from "sonner";
+import axios from "axios";
+import { formatIDR } from "@/utils/formatter/currency";
 
-const TransactionTableRow = ({ transaction, index } : { transaction: Transaction; index: number; }) => {
+const TransactionTableRow = ({
+  transaction,
+  index,
+}: {
+  transaction: Transaction;
+  index: number;
+}) => {
   const [loading, setLoading] = useState(false);
-  
-    const updateStatus = async (id: string, newStatus: string) => {
-      setLoading(true);
-      try {
-        const res = await axios.patch(`/api/transactions/update/status`, {
-          id,
-          status: newStatus,
-        });
-      } catch (err) {
-        console.error("Failed to update status:", err);
-      } finally {
-        setLoading(false);
-        toast.success("Transaction status updated successfully");
-      }
-    };
+
+  const updateStatus = async (id: string, newStatus: string) => {
+    setLoading(true);
+    try {
+      const res = await axios.patch(`/api/transactions/update/status`, {
+        id,
+        status: newStatus,
+      });
+      toast.success("Transaction status updated successfully");
+    } catch (err) {
+      toast.error("Failed to update transaction status");
+      console.error("Failed to update status:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <TableRow key={transaction.id}>
       <TableCell className="text-center">{index + 1}</TableCell>
@@ -243,7 +250,7 @@ const TransactionTableRow = ({ transaction, index } : { transaction: Transaction
           </Button>
         ) : transaction.status === "In Process" ? (
           <Button
-            onClick={() => updateStatus(transaction.id, "Completed")}
+            onClick={() => updateStatus(transaction.id, "Printed")}
             disabled={loading}
             variant="default"
             className="w-full cursor-pointer"
@@ -256,9 +263,36 @@ const TransactionTableRow = ({ transaction, index } : { transaction: Transaction
               </>
             )}
           </Button>
+        ) : transaction.status === "Printed" ? (
+          <Button
+            className={
+              "bg-complete-background/20 text-complete-foreground flex items-center gap-1 rounded-md px-2 py-1.5"
+            }
+          >
+            <PrinterCheck size={16} />
+            Printed
+          </Button>
+        ) : transaction.status === "Delivering" ? (
+          <Button
+            className={
+              "bg-delivering-background/20 text-delivering-foreground flex items-center gap-1 rounded-md px-2 py-1.5"
+            }
+          >
+            <Truck size={16} />
+            Delivering
+          </Button>
+        ) : transaction.status === "Delivered" ? (
+          <Button
+            onClick={() => updateStatus(transaction.id, "Completed")}
+            className={
+              "bg-pending-background/20 text-pending-foreground flex items-center gap-1 rounded-md px-2 py-1.5"
+            }
+          >
+            <PackageCheck size={16} />
+            Delivered
+          </Button>
         ) : transaction.status === "Completed" ? (
           <Button
-            disabled
             variant="default"
             className="bg-complete-background text-accent-foreground w-full"
           >
@@ -270,6 +304,6 @@ const TransactionTableRow = ({ transaction, index } : { transaction: Transaction
       <TableCell className="">{formatIDR(transaction.total_price)}</TableCell>
     </TableRow>
   );
-}
+};
 
-export default TransactionTableRow
+export default TransactionTableRow;
