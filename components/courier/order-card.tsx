@@ -27,11 +27,10 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
+import React from "react";
+import StatusButton from "../status-button";
 
-import React from 'react'
-import StatusButton from "./status-button";
-
-const OrderCard = ({transaction} : {transaction: GetTransactionByCourierId}) => {
+const OrderCard = ({ transaction }: { transaction }) => {
   return (
     <Card key={transaction.id}>
       <CardHeader className="space-y-1">
@@ -178,6 +177,6 @@ const OrderCard = ({transaction} : {transaction: GetTransactionByCourierId}) => 
       </CardFooter>
     </Card>
   );
-}
+};
 
-export default OrderCard
+export default OrderCard;
