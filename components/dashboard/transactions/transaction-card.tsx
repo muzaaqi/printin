@@ -18,9 +18,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleDollarSign,
-  ClockFading,
   FileInput,
-  Loader2,
   Mail,
   NotepadText,
   Phone,
@@ -35,27 +33,9 @@ import {
 } from "@/utils/formatter/datetime";
 import { Transaction } from "@/features/get-all-transaction-realtime";
 import { formatIDR } from "@/utils/formatter/currency";
-import axios from "axios";
-import { toast } from "sonner";
+import StatusButton from "@/components/status-button";
 
 const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
-  const [loading, setLoading] = useState(false);
-
-  const updateStatus = async (newStatus: string) => {
-    setLoading(true);
-    try {
-      const res = await axios.patch(`/api/transactions/update/status`, {
-        id: transaction.id,
-        status: newStatus,
-      });
-      toast.success("Transaction status updated successfully");
-    } catch (err) {
-      toast.error("Failed to update transaction status");
-      console.error("Failed to update status:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
   return (
     <>
       <Card className="w-fit max-w-md transition-all">
@@ -249,37 +229,7 @@ const TransactionCard = ({ transaction }: { transaction: Transaction }) => {
               </Link>
             </div>
             <div className="justify-self-end">
-              {transaction.status === "Pending" ? (
-                <Button
-                  onClick={() => updateStatus("In Process")}
-                  disabled={loading}
-                  variant="default"
-                  className={`bg-destructive hover:bg-destructive/80 w-full ${loading ? "cursor-wait" : "cursor-pointer"}`}
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <CircleDashed /> Pending
-                    </>
-                  )}
-                </Button>
-              ) : transaction.status === "In Process" ? (
-                <Button
-                  onClick={() => updateStatus("Completed")}
-                  disabled={loading}
-                  variant="default"
-                  className={`w-full cursor-pointer ${loading ? "cursor-wait" : "cursor-pointer"}`}
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <ClockFading /> In Process
-                    </>
-                  )}
-                </Button>
-              ) : null}
+              <StatusButton transaction={transaction} />
             </div>
           </div>
         </CardFooter>

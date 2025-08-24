@@ -35,7 +35,7 @@ const TransactionCards = () => {
             ))
           : (() => {
               const activeTransactions = transactions.filter(
-                (transaction) => transaction.status !== "Completed",
+                (transaction) => transaction.status === "Pending" || transaction.status === "In Process",
               );
 
               return activeTransactions.length === 0 ? (

@@ -9,14 +9,9 @@ import {
   CircleCheck,
   CircleDashed,
   CircleDollarSignIcon,
-  ClockFading,
-  Loader2,
   Mail,
-  PackageCheck,
   Phone,
-  PrinterCheck,
   QrCode,
-  Truck,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,6 +21,7 @@ import { formatDateOnly } from "@/utils/formatter/datetime";
 import { toast } from "sonner";
 import axios from "axios";
 import { formatIDR } from "@/utils/formatter/currency";
+import StatusButton from "@/components/status-button";
 
 const TransactionTableRow = ({
   transaction,
@@ -233,72 +229,7 @@ const TransactionTableRow = ({
         )}
       </TableCell>
       <TableCell className="justify-center">
-        {transaction.status === "Pending" ? (
-          <Button
-            onClick={() => updateStatus(transaction.id, "In Process")}
-            disabled={loading}
-            variant="default"
-            className="bg-destructive hover:bg-destructive/80 w-full cursor-pointer"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <CircleDashed /> Pending
-              </>
-            )}
-          </Button>
-        ) : transaction.status === "In Process" ? (
-          <Button
-            onClick={() => updateStatus(transaction.id, "Printed")}
-            disabled={loading}
-            variant="default"
-            className="w-full cursor-pointer"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <ClockFading /> In Process
-              </>
-            )}
-          </Button>
-        ) : transaction.status === "Printed" ? (
-          <Button
-            className={
-              "bg-complete-background/20 text-complete-foreground flex items-center gap-1 rounded-md px-2 py-1.5"
-            }
-          >
-            <PrinterCheck size={16} />
-            Printed
-          </Button>
-        ) : transaction.status === "Delivering" ? (
-          <Button
-            className={
-              "bg-delivering-background/20 text-delivering-foreground flex items-center gap-1 rounded-md px-2 py-1.5"
-            }
-          >
-            <Truck size={16} />
-            Delivering
-          </Button>
-        ) : transaction.status === "Delivered" ? (
-          <Button
-            onClick={() => updateStatus(transaction.id, "Completed")}
-            className={
-              "bg-pending-background/20 text-pending-foreground flex items-center gap-1 rounded-md px-2 py-1.5"
-            }
-          >
-            <PackageCheck size={16} />
-            Delivered
-          </Button>
-        ) : transaction.status === "Completed" ? (
-          <Button
-            variant="default"
-            className="bg-complete-background text-accent-foreground w-full"
-          >
-            <CircleCheck /> Completed
-          </Button>
-        ) : null}
+        <StatusButton transaction={transaction} />
       </TableCell>
       <TableCell className="">{formatIDR(transaction.service.price)}</TableCell>
       <TableCell className="">{formatIDR(transaction.total_price)}</TableCell>
