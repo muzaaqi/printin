@@ -15,8 +15,8 @@ const AddPaperForm = ({
     size: string | null;
     type: string | null;
     image: File | null;
-    price: string | null;
-    sheets: string | null;
+    price: number | null;
+    sheets: number | null;
   };
   setFormData: React.Dispatch<
     React.SetStateAction<{
@@ -24,14 +24,14 @@ const AddPaperForm = ({
       size: string | null;
       type: string | null;
       image: File | null;
-      price: string | null;
-      sheets: string | null;
+      price: number | null;
+      sheets: number | null;
     }>
   >;
   handleSave: () => Promise<void>;
   loading: boolean;
 }) => {
-  const handleChange = (name: string, value: string | File | null) => {
+  const handleChange = (name: string, value: string | number | File | null) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
   return (
@@ -71,21 +71,32 @@ const AddPaperForm = ({
       <TableCell>
         <Input
           type="number"
-          placeholder="Price"
-          value={formData.price || 0}
-          onChange={(e) => handleChange("price", e.target.value)}
+          placeholder="Sheets"
+          value={formData.sheets || ""}
+          onChange={(e) => handleChange("sheets", Number(e.target.value))}
         />
       </TableCell>
       <TableCell>
         <Input
           type="number"
-          placeholder="Sheets"
-          value={formData.sheets || ""}
-          onChange={(e) => handleChange("sheets", e.target.value)}
+          placeholder="Price"
+          value={formData.price || ""}
+          onChange={(e) => handleChange("price", Number(e.target.value))}
         />
       </TableCell>
       <TableCell className="text-center">
-        <Button onClick={() => handleSave()} disabled={loading || !formData.brand || !formData.size || !formData.type || !formData.image || !formData.price || !formData.sheets}>
+        <Button
+          onClick={() => handleSave()}
+          disabled={
+            loading ||
+            !formData.brand ||
+            !formData.size ||
+            !formData.type ||
+            !formData.image ||
+            !formData.price ||
+            !formData.sheets
+          }
+        >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
         </Button>
       </TableCell>

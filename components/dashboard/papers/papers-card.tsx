@@ -20,6 +20,7 @@ import { formatIDR } from "@/utils/formatter/currency";
 import { toast } from "sonner";
 import axios from "axios";
 import { Spinner } from "@/components/ui/spinner";
+import { updatePaperSheets } from "@/hooks/papers/update-sheets";
 
 const formSchema = z.object({
   sheets: z.number().min(0).optional(),
@@ -52,20 +53,17 @@ const PapersCard = ({ paper }: { paper: Paper }) => {
 
     setLoading(true);
 
-    try {
-      const res = await axios.patch(`/api/papers/update/sheets`, {
-        paperId: paper.id,
-        totalSheets: totalSheets,
-      });
+    const res = await updatePaperSheets(paper.id, totalSheets);
+
+    if (res.success) {
       toast.success("Updated sheets successfully");
-    } catch (error) {
+    } else {
       toast.error("Failed to update sheets", {
-        description: error instanceof Error ? error.message : String(error),
+        description: res.error,
       });
-      console.error("Update sheets error:", error);
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   return (

@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/utils/supabase/server-client";
+"use server";
 
-export async function PATCH(req: NextRequest) {
+import { createSupabaseServerClient } from "@/utils/supabase/server-client";
+import { UpdatePaperFormData } from "./type";
+
+export const updatePaperById = async (formData: UpdatePaperFormData) => {
   const supabase = await createSupabaseServerClient();
 
   const {
@@ -9,34 +11,13 @@ export async function PATCH(req: NextRequest) {
     error: authError,
   } = await supabase.auth.getUser();
   if (authError || !user || user.user_metadata.role !== "admin") {
-    return NextResponse.json(
-      { error: "Authentication failed" },
-      { status: 401 },
-    );
+    return { error: "Authentication failed", status: 401, success: false};
   }
 
-  const formData = await req.formData();
-
-  const id = formData.get("id") as string;
-  const sheets = Number(formData.get("sheets"));
-  const brand = formData.get("brand") as string;
-  const size = formData.get("size") as string;
-  const type = formData.get("type") as string;
-  const price = Number(formData.get("price"));
-  const image = formData.get("image") as File | null;
-
-  if (isNaN(sheets) || sheets < 0) {
-    return NextResponse.json(
-      { error: "Invalid sheets value" },
-      { status: 400 },
-    );
-  }
+  const { id, sheets, brand, size, type, price, image } = formData;
 
   if (typeof sheets !== "number" || sheets < 0) {
-    return NextResponse.json(
-      { error: "Invalid sheets value" },
-      { status: 400 },
-    );
+    return { error: "Invalid sheets value", status: 400, success: false};
   }
 
   const { data: selectData, error: selectError } = await supabase
@@ -47,10 +28,7 @@ export async function PATCH(req: NextRequest) {
 
   if (selectError) {
     console.error("Error fetching paper:", selectError);
-    return NextResponse.json(
-      { error: "Failed to fetch paper" },
-      { status: 500 },
-    );
+    return { error: "Failed to fetch paper", status: 500, success: false};
   }
 
   let imageUrl = selectData.image_url;
@@ -62,14 +40,11 @@ export async function PATCH(req: NextRequest) {
       .remove([selectData.image_path]);
 
     if (storageError) {
-      return NextResponse.json(
-        { error: storageError.message },
-        { status: 500 },
-      );
+      return { error: storageError.message, status: 500, success: false};
     }
-
+    
+    const safeBrand = brand ? brand.replace(/\s+/g, "_") : selectData.brand.replace(/\s+/g, "_");
     const fileExt = image.name.split(".").pop();
-    const safeBrand = brand.replace(/\s+/g, "_");
     const imagePath = `Papers/${safeBrand}/${size}/paper-${type}.${fileExt}`;
 
     const { data: uploadedFile, error: uploadError } = await supabase.storage
@@ -80,10 +55,7 @@ export async function PATCH(req: NextRequest) {
       });
 
     if (uploadError) {
-      return NextResponse.json(
-        { error: "Failed to upload image" },
-        { status: 500 },
-      );
+      return { error: "Failed to upload image", status: 500, success: false};
     }
 
     try {
@@ -93,15 +65,11 @@ export async function PATCH(req: NextRequest) {
 
       imageFullPath = uploadedFile.path;
     } catch (error) {
-      console.error("Error getting image URL:", error);
-      return NextResponse.json(
-        { error: "Failed to get image URL" },
-        { status: 500 },
-      );
+      return { error: "Failed to get image URL", status: 500, success: false, message: error };
     }
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("papers")
     .update({
       sheets: sheets || selectData.sheets,
@@ -117,11 +85,8 @@ export async function PATCH(req: NextRequest) {
     .select();
 
   if (error) {
-    return NextResponse.json(
-      { error: "Failed to update paper" },
-      { status: 500 },
-    );
+    return { error: "Failed to update paper", status: 500, success: false};
   }
 
-  return NextResponse.json({ data });
-}
+  return { success: true };
+};

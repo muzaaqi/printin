@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/popover";
 import { Paper } from "@/features/get-all-papers-realtime";
 import Image from "next/image";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,14 +17,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EllipsisVertical, Loader2 } from "lucide-react";
-import axios from "axios";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { formatIDR } from "@/utils/formatter/currency";
+import { updatePaperById } from "@/hooks/papers/update-paper-by-id";
+import { deletePaperById } from "@/hooks/papers/delete-paper-by-id";
 
 const PapersTableRow = ({ paper, index }: { paper: Paper; index: number }) => {
-  const [isEdit, setIsEdit] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     id: paper.id,
     brand: paper.brand,
@@ -35,45 +36,36 @@ const PapersTableRow = ({ paper, index }: { paper: Paper; index: number }) => {
     sheets: paper.sheets,
   });
 
-  const handleChange = (name: string, value: string | File | null) => {
+  const handleChange = (name: string, value: string | number | File | null) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const onUpdate = async () => {
     setLoading(true);
 
-    try {
-      const res = await axios.patch("/api/papers/update/data", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+    const res = await updatePaperById(formData);
+    if (res.success) {
+      toast.success("Paper updated successfully");
+      setIsEdit(false);
+    } else {
+      toast.error("Failed to update paper", {
+        description: res.error,
       });
-
-      if (res.status === 200) {
-        toast.success("Paper updated successfully");
-        setIsEdit(false);
-      } else {
-        toast.error("Failed to update paper");
-      }
-    } catch (error) {
-      console.error("Error updating paper:", error);
-      toast.error("Error updating paper");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const onDelete = async () => {
     setLoading(true);
-    try {
-      const res = await axios.delete("/api/papers/delete", {
-        data: { id: paper.id },
-      });
+    const res = await deletePaperById(paper.id);
+    if (res.success) {
       toast.success("Paper deleted successfully");
-    } catch (error) {
-      toast.error("Error deleting paper");
-      console.error("Error deleting paper:", error);
-    } finally {
-      setLoading(false);
+    } else {
+      toast.error("Failed to delete paper", {
+        description: res.error,
+      });
     }
+    setLoading(false);
   };
   return (
     <TableRow>
@@ -81,7 +73,6 @@ const PapersTableRow = ({ paper, index }: { paper: Paper; index: number }) => {
       <TableCell className="text-center">
         {isEdit ? (
           <Input
-            defaultValue={paper.brand}
             value={formData.brand}
             onChange={(e) => handleChange("brand", e.target.value)}
           />
@@ -92,7 +83,6 @@ const PapersTableRow = ({ paper, index }: { paper: Paper; index: number }) => {
       <TableCell className="text-center">
         {isEdit ? (
           <Input
-            defaultValue={paper.size}
             value={formData.size}
             onChange={(e) => handleChange("size", e.target.value)}
           />
@@ -103,7 +93,6 @@ const PapersTableRow = ({ paper, index }: { paper: Paper; index: number }) => {
       <TableCell className="text-center">
         {isEdit ? (
           <Input
-            defaultValue={paper.type}
             value={formData.type}
             onChange={(e) => handleChange("type", e.target.value)}
           />
@@ -136,9 +125,8 @@ const PapersTableRow = ({ paper, index }: { paper: Paper; index: number }) => {
       <TableCell className="text-center">
         {isEdit ? (
           <Input
-            defaultValue={paper.sheets}
             value={formData.sheets}
-            onChange={(e) => handleChange("sheets", e.target.value)}
+            onChange={(e) => handleChange("sheets", Number(e.target.value))}
           />
         ) : (
           paper.sheets
@@ -147,9 +135,8 @@ const PapersTableRow = ({ paper, index }: { paper: Paper; index: number }) => {
       <TableCell className="text-center">
         {isEdit ? (
           <Input
-            defaultValue={paper.price}
             value={formData.price}
-            onChange={(e) => handleChange("price", e.target.value)}
+            onChange={(e) => handleChange("price", Number(e.target.value))}
           />
         ) : (
           formatIDR(paper.price)

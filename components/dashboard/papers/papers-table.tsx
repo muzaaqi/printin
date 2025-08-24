@@ -17,11 +17,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import PapersTableRow from "./papers-table-row";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
 import AddPaperForm from "./add-paper-form";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { formatIDR } from "@/utils/formatter/currency";
+import { addNewPaper } from "@/hooks/papers/add-new-paper";
 
 export interface PaperRefs {
   brand: React.RefObject<HTMLInputElement | null>;
@@ -42,8 +42,8 @@ const PapersTable = () => {
     size: null as string | null,
     type: null as string | null,
     image: null as File | null,
-    price: null as string | null,
-    sheets: null as string | null,
+    price: null as number | null,
+    sheets: null as number | null,
   });
 
   const handleSave = async () => {
@@ -59,18 +59,23 @@ const PapersTable = () => {
       return;
     }
     setLoadingAddPaper(true);
-    try {
-      const res = await axios.post("/api/papers/create", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+
+    const res = await addNewPaper(formData);
+    if (res.success) {
+      toast.success("Paper added successfully!");
+      setFormData({
+        brand: null,
+        size: null,
+        type: null,
+        image: null,
+        price: null,
+        sheets: null,
       });
-      toast.success("Paper saved successfully!");
-    } catch (error) {
-      toast.error("Error saving paper.");
-      console.error("Error saving paper:", error);
-    } finally {
-      setLoadingAddPaper(false);
       setAddPaper(false);
+    } else {
+      toast.error("Error adding paper.", { description: res.error });
     }
+    setLoadingAddPaper(false);
   };
 
   useEffect(() => {
@@ -164,7 +169,7 @@ const PapersTable = () => {
             <TableCell className="text-center font-semibold">Total</TableCell>
             <TableCell className="text-center font-bold">
               {formatIDR(
-                papers.reduce((acc, paper) => acc + (paper.price || 0), 0)
+                papers.reduce((acc, paper) => acc + (paper.price || 0), 0),
               )}
             </TableCell>
             <TableCell></TableCell>
