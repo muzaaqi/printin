@@ -25,7 +25,7 @@ const AddServiceForm = ({
     color: string | null;
     duplex: string | null;
     image: File | null;
-    price: string | null;
+    price: number | null;
   };
   setFormData: React.Dispatch<
     React.SetStateAction<{
@@ -34,14 +34,14 @@ const AddServiceForm = ({
       color: string | null;
       duplex: string | null;
       image: File | null;
-      price: string | null;
+      price: number | null;
     }>
   >;
   handleSave: () => Promise<void>;
   loadingAddService: boolean;
   papers: GetAllPapers;
 }) => {
-  const handleChange = (name: string, value: string | File | null) => {
+  const handleChange = (name: string, value: string | number | File | null) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
   return (
@@ -113,7 +113,7 @@ const AddServiceForm = ({
           type="number"
           placeholder="Price"
           value={formData.price || ""}
-          onChange={(e) => handleChange("price", e.target.value)}
+          onChange={(e) => handleChange("price", Number(e.target.value))}
         />
       </TableCell>
       <TableCell className="text-center">

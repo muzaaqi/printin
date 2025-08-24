@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,11 +11,11 @@ import {
 import { Service } from "@/features/get-all-services";
 import ServiceTableRow from "./service-table-row";
 import { toast } from "sonner";
-import axios from "axios";
 import AddServiceForm from "./add-service-form";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { GetAllPapers } from "@/features/get-all-papers";
+import { addNewService } from "@/hooks/services/add-new-service";
 
 const ServicesTable = ({
   services,
@@ -32,7 +32,7 @@ const ServicesTable = ({
     color: null as string | null,
     duplex: null as string | null,
     image: null as File | null,
-    price: null as string | null,
+    price: null as number | null,
   });
 
   const handleSave = async () => {
@@ -48,20 +48,24 @@ const ServicesTable = ({
       return;
     }
     setLoadingAddService(true);
-    try {
-      const res = await axios.post("/api/services/create", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+    const res = await addNewService(formData);
+    if (res.success) {
       toast.success("Service added successfully");
-    } catch (error) {
-      console.error("Error adding service:", error);
-      toast.error("Error adding service");
-    } finally {
-      setLoadingAddService(false);
+      setFormData({
+        name: null,
+        paperId: null,
+        color: null,
+        duplex: null,
+        image: null,
+        price: null,
+      });
       setAddService(false);
+    } else {
+      toast.error("Failed to add service", {
+        description: res.error,
+      });
     }
+    setLoadingAddService(false);
   };
 
   return (

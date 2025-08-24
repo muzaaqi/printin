@@ -26,10 +26,11 @@ import { Ban, CircleCheck, EllipsisVertical, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Service } from "@/features/get-all-services";
 import { Input } from "@/components/ui/input";
-import axios from "axios";
 import { toast } from "sonner";
 import { Paper } from "@/features/get-all-papers-realtime";
 import { Button } from "@/components/ui/button";
+import { updateServiceById } from "@/hooks/services/update-service-by-id";
+import { deleteServiceById } from "@/hooks/services/delete-service-by-id";
 
 const ServiceTableRow = ({
   service,
@@ -52,45 +53,35 @@ const ServiceTableRow = ({
     price: service.price,
   });
 
-  const handleChange = (name: string, value: string | File | null) => {
+  const handleChange = (name: string, value: string | number | File | null) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const onUpdate = async () => {
     setLoading(true);
-    try {
-      const res = await axios.patch("/api/service/update", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+    const res = await updateServiceById(formData);
+    if (res.success) {
+      toast.success("Service updated successfully");
+      setIsEdit(false);
+    } else if (!res.success) {
+      toast.error("Failed to update service", {
+        description: res.error,
       });
-
-      if (res.status === 200) {
-        toast.success("Service updated successfully");
-        setIsEdit(false);
-      } else {
-        toast.error("Failed to update service");
-      }
-    } catch (error) {
-      console.error("Error updating service:", error);
-      toast.error("Error updating service");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const onDelete = async () => {
     setLoading(true);
-    try {
-      const res = await axios.delete(`/api/services/delete`, {
-        data: { id: service.id },
-      });
-
+    const res = await deleteServiceById(service.id);
+    if (res.success) {
       toast.success("Service deleted successfully");
-    } catch (error) {
-      toast.error("Error deleting service");
-      console.error("Error deleting service:", error);
-    } finally {
-      setLoading(false);
+    } else {
+      toast.error("Delete Failed", {
+        description: res.error,
+      });
     }
+    setLoading(false);
   };
 
   return (
@@ -101,7 +92,6 @@ const ServiceTableRow = ({
           <Input
             className="w-fit border-none ring-0 focus:border-none focus:ring-0"
             type="text"
-            defaultValue={service.name}
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
           />
@@ -213,9 +203,8 @@ const ServiceTableRow = ({
           <Input
             className="w-fit border-none ring-0 focus:border-none focus:ring-0"
             type="text"
-            defaultValue={formatIDR(service.price)}
             value={formData.price}
-            onChange={(e) => handleChange("price", e.target.value)}
+            onChange={(e) => handleChange("price", Number(e.target.value))}
           />
         ) : (
           formatIDR(service.price)
