@@ -21,9 +21,20 @@ export default function RealtimeListener() {
         async (payload) => {
           if (role === "admin") {
             try {
-              const { data, error } = await supabase
+              const {
+                data,
+                error,
+              }: {
+                data: {
+                  profile: { full_name: string };
+                  service: { name: string };
+                } | null;
+                error: Error | null;
+              } = await supabase
                 .from("transactions")
-                .select(`id, profiles(full_name), services(name)`)
+                .select(
+                  `id, profile:profiles(full_name), service:services(name)`,
+                )
                 .eq("id", payload.new.id)
                 .single();
 
@@ -31,7 +42,7 @@ export default function RealtimeListener() {
 
               playNotificationSound();
               toast.info("Ada Pesanan Baru!", {
-                description: `${data.profiles?.full_name || "Pelanggan"} memesan ${data.services?.name || "layanan"}`,
+                description: `${data!.profile?.full_name || "Pelanggan"} memesan ${data!.service?.name || "layanan"}`,
                 duration: 5000,
                 action: {
                   label: "Lihat",

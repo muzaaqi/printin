@@ -11,7 +11,6 @@ export type Paper = {
   image_url: string;
 };
 
-
 export const GetAllPapersRealtime = async (
   onChange: (papers: Paper[]) => void,
 ): Promise<Paper[]> => {
@@ -40,7 +39,7 @@ export const GetAllPapersRealtime = async (
         const { data: updatedData, error: updateError } = await supabase
           .from("papers")
           .select("*")
-          .order("sheets", { ascending: false });
+          .order("sheets", { ascending: true });
 
         if (!updateError) {
           onChange(updatedData as Paper[]);
