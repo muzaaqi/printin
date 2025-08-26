@@ -59,7 +59,7 @@ export const updateServiceById = async (formData: UpdateServiceFormData) => {
 
     const fileExt = image.name.split(".").pop();
     const safeName = name ? name.replace(/\s+/g, "_") : selectData.name.replace(/\s+/g, "_");
-    const imagePath = `Services/${safeName}.${fileExt}`;
+    const imagePath = `Services/SERVICE-${safeName}.${fileExt}`;
 
     const { data: uploadedFile, error: uploadError } = await supabase.storage
       .from("ngeprint-assets")

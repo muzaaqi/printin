@@ -26,7 +26,7 @@ export const addNewPaper = async (formData: InsertPaperFormData) => {
 
   const safeBrand = brand && brand.replace(/\s+/g, "_");
   const fileExt = image.name.split(".").pop();
-  const imagePath = `Papers/${safeBrand}/${size}/paper-${type}.${fileExt}`;
+  const imagePath = `Papers/${safeBrand}/${size}/PAPER-${type}.${fileExt}`;
 
   const { data: uploadedFile, error: uploadError } = await supabase.storage
     .from("ngeprint-assets")
