@@ -61,7 +61,7 @@ const ProfilePage = async () => {
           Daftar Jadi Kurir
         </span>
       </div>
-      <Link href="courier/register">
+      <Link href="courier-register">
         <Button className="w-full text-xs">Daftar</Button>
       </Link>
     </div>
