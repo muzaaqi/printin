@@ -11,7 +11,7 @@ export default function RealtimeListener() {
   const router = useRouter();
 
   useEffect(() => {
-    if (role !== "admin") return; // hanya attach kalau valid
+    if (role !== "admin") return;
 
     const channel = supabase
       .channel("transactions-notification")
@@ -33,9 +33,9 @@ export default function RealtimeListener() {
               } = await supabase
                 .from("transactions")
                 .select(
-                  `id, profile:profiles(full_name), service:services(name)`,
+                  `uid, profile:profiles(full_name), service:services(name)`,
                 )
-                .eq("id", payload.new.id)
+                .eq("uid", payload.new.uid)
                 .single();
 
               if (error) throw error;
@@ -55,7 +55,9 @@ export default function RealtimeListener() {
           }
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Channel status:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);

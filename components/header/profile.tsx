@@ -84,6 +84,11 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
                 <Link href="/me">
                   <DropdownMenuItem>Profile</DropdownMenuItem>
                 </Link>
+                {user?.user_metadata?.role === "courier" && (
+                  <Link href="/courier/orders">
+                    <DropdownMenuItem>Courier</DropdownMenuItem>
+                  </Link>
+                )}
                 {user?.user_metadata?.role === "admin" ? (
                   <Link href="/dashboard">
                     <DropdownMenuItem>Dashboard</DropdownMenuItem>

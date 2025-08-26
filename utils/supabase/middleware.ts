@@ -79,6 +79,16 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  if (pathname.startsWith("/courier")) {
+    if (user?.user_metadata?.role === "courier") {
+      return supabaseResponse;
+    } else {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
 

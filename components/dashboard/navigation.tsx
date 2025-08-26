@@ -7,6 +7,7 @@ import {
   Layers,
   SquareChartGantt,
   SquareMousePointer,
+  Truck,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -19,6 +20,7 @@ const navItems = [
   },
   { href: "/dashboard/services", label: "Services", icon: SquareMousePointer },
   { href: "/dashboard/papers", label: "Papers", icon: Layers },
+  { href: "/dashboard/couriers", label: "Couriers", icon: Truck },
 ];
 
 const SidebarNav = () => {
