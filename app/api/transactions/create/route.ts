@@ -12,10 +12,8 @@ export async function POST(req: NextRequest) {
   let supabase;
 
   try {
-    // Early size check sebelum parsing FormData
     const contentLength = req.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > 60 * 1024 * 1024) {
-      // 60MB max
       return NextResponse.json(
         { error: "File terlalu besar (maksimal 60MB)" },
         { status: 413 },
@@ -24,7 +22,6 @@ export async function POST(req: NextRequest) {
 
     supabase = await createSupabaseServerClient();
 
-    // Auth check dengan better error handling
     const {
       data: { user },
       error: authError,
@@ -36,7 +33,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Parse FormData dengan timeout protection
     let form: FormData;
     try {
       form = await Promise.race([
@@ -56,7 +52,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract and validate form data
     const serviceId = form.get("serviceId") as string;
     const courierId = form.get("courier") as string | null;
     const paperId = form.get("paperId") as string;
@@ -70,7 +65,6 @@ export async function POST(req: NextRequest) {
     const file = form.get("file") as File | null;
     const receipt = form.get("receipt") as File | null;
 
-    // Validate required fields
     if (!serviceId || !paperId || !file || !pages) {
       return NextResponse.json(
         {
@@ -81,9 +75,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate file size and type
     if (file.size > 50 * 1024 * 1024) {
-      // 50MB
       return NextResponse.json(
         { error: "File terlalu besar (maksimal 50MB)" },
         { status: 400 },
@@ -106,7 +98,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate numbers
     if (isNaN(pages) || pages < 1 || pages > 1000) {
       return NextResponse.json(
         { error: "Jumlah halaman harus antara 1-1000" },
@@ -121,7 +112,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get paper data dengan error handling
     const { data: papersRow, error: papersErr } = await supabase
       .from("papers")
       .select("id, sheets")
@@ -143,7 +133,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check stock
     if (sheets > papersRow.sheets) {
       return NextResponse.json(
         { error: `Stok tidak cukup. Tersedia: ${papersRow.sheets} lembar` },
@@ -153,7 +142,6 @@ export async function POST(req: NextRequest) {
 
     const totalPrice = (Number(price) || 0) * sheets;
 
-    // Date/time validation (optional - will be handled by form later)
     if (neededDate && neededTime) {
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       const timeRegex = /^\d{2}:\d{2}(:\d{2})?$/;
@@ -174,9 +162,9 @@ export async function POST(req: NextRequest) {
     }
 
     const timestamp = Date.now();
-    const transactionId = `ORDER-${timestamp}`;
-    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const docPath = `${user.id}-${user.user_metadata.full_name}/${transactionId}/FILE-${sanitizedFileName}`;
+    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").toUpperCase();
+    const transactionId = `ORDER-${sanitizedFileName}-${timestamp}`;
+    const docPath = `${user.id}-${user.user_metadata.full_name}/${transactionId}/FILE-${sanitizedFileName}-${timestamp}`;
 
     // const { error: upErr } = await supabase.storage
     //   .from("transactions-files")
@@ -234,7 +222,7 @@ export async function POST(req: NextRequest) {
     // }
 
     const bucketName = "ngeprint-file-storage";
-    // Upload dokumen
+
     let fileUrl: string;
 
     try {
@@ -247,7 +235,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Upload receipt jika ada
     let receiptUrl: string | null = null;
     if (paymentMethod === "Qris" && receipt) {
       if (receipt.size > 5 * 1024 * 1024) {
@@ -258,12 +245,11 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const rPath = `${user.id}-${user.user_metadata.full_name}/${transactionId}/RECEIPT-${receipt.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+        const rPath = `${user.id}-${user.user_metadata.full_name}/${transactionId}/RECEIPT-${sanitizedFileName}-${timestamp}`;
         receiptUrl = await uploadToR2(rPath, receipt);
       } catch (err) {
         console.error("Receipt upload error:", err);
 
-        // rollback dokumen kalau receipt gagal
         await r2.send(
           new DeleteObjectCommand({
             Bucket: bucketName,
@@ -278,7 +264,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Insert transaction
     const insertData = {
       id: transactionId,
       user_id: user.id,
@@ -307,7 +292,6 @@ export async function POST(req: NextRequest) {
     if (insErr) {
       console.error("Transaction insert error:", insErr);
 
-      // Cleanup uploaded files on database error
       await supabase.storage.from("transactions-files").remove([docPath]);
       if (receiptUrl) {
         const receiptPath = receiptUrl.split("/").pop();
@@ -324,7 +308,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Update stock
     const { error: stockErr } = await supabase
       .from("papers")
       .update({ sheets: papersRow.sheets - sheets })
@@ -332,8 +315,6 @@ export async function POST(req: NextRequest) {
 
     if (stockErr) {
       console.error("Stock update error:", stockErr);
-      // Log error but don't fail the transaction
-      // Consider implementing a background job to retry stock updates
     }
 
     return NextResponse.json(
