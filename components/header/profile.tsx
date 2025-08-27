@@ -23,7 +23,7 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  
+
   useEffect(() => {
     setMounted(true);
     const {
@@ -63,8 +63,8 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
                   <div className="hover:border-foreground rounded-full border-3 p-0.5 transition-all duration-300">
                     <Image
                       src={
-                        user.user_metadata.avatar_url
-                          ? user.user_metadata.avatar_url
+                        user?.user_metadata?.avatar_url
+                          ? user?.user_metadata?.avatar_url
                           : "/default_avatar.svg"
                       }
                       width={40}
