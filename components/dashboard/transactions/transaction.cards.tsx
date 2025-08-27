@@ -37,7 +37,6 @@ const TransactionCards = () => {
               const activeTransactions = transactions.filter(
                 (transaction) => transaction.status === "Pending" || transaction.status === "In Process",
               );
-
               return activeTransactions.length === 0 ? (
                 <div className="h-118 w-7xl mx-auto self-center flex flex-col items-center justify-center">
                   <p className="text-muted-foreground">

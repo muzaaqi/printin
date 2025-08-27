@@ -162,9 +162,11 @@ export async function POST(req: NextRequest) {
     }
 
     const timestamp = Date.now();
-    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").toUpperCase();
-    const transactionId = `ORDER-${sanitizedFileName}-${timestamp}`;
-    const docPath = `${user.id}-${user.user_metadata.full_name}/${transactionId}/FILE-${sanitizedFileName}-${timestamp}`;
+    const sanitizedFileName = file.name
+      .replace(/[^a-zA-Z0-9.-]/g, "_")
+      .toUpperCase();
+    const transactionId = `ORDER-${timestamp}-${sanitizedFileName}`;
+    const docPath = `${user.id}-${user.user_metadata.full_name}/${transactionId}/FILE-${timestamp}-${sanitizedFileName}`;
 
     // const { error: upErr } = await supabase.storage
     //   .from("transactions-files")
@@ -245,7 +247,7 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const rPath = `${user.id}-${user.user_metadata.full_name}/${transactionId}/RECEIPT-${sanitizedFileName}-${timestamp}`;
+        const rPath = `${user.id}-${user.user_metadata.full_name}/${transactionId}/RECEIPT-${timestamp}-${sanitizedFileName}`;
         receiptUrl = await uploadToR2(rPath, receipt);
       } catch (err) {
         console.error("Receipt upload error:", err);
@@ -269,13 +271,13 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       service_id: serviceId,
       paper_id: paperId,
-      courier_id: courierId || null, // Allow null for "Diambil"
+      courier_id: courierId || null,
       file_url: fileUrl,
       pages,
       sheets,
       needed_date: neededDate,
       needed_time: neededTime,
-      notes: notes.substring(0, 150), // Ensure max length
+      notes: notes.substring(0, 150),
       payment_method: paymentMethod,
       receipt_url: receiptUrl,
       total_price: totalPrice,
