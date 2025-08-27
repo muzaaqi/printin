@@ -18,6 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
   AlertDialogAction,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -50,7 +51,7 @@ const RegisterForm = ({ user }: { user: User }) => {
       form.reset();
     } else if (!res.success) {
       toast.error("Terjadi kesalahan. Silakan coba lagi.", {
-        description: <p>{res.error.message}</p>,
+        description: <p>{res.error?.message}</p>,
         className: "text-destructive",
       });
     }
@@ -59,7 +60,7 @@ const RegisterForm = ({ user }: { user: User }) => {
   return (
     <>
       <Card className="mx-auto max-w-md min-w-sm">
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form id="courier-registration-form" onSubmit={form.handleSubmit(onSubmit)}>
           <CardHeader>
             <CardTitle>Courier Registration</CardTitle>
             <CardDescription>
@@ -129,13 +130,38 @@ const RegisterForm = ({ user }: { user: User }) => {
             </div>
           </CardContent>
           <CardFooter>
-            <Button disabled={loading} className="w-full" type="submit">
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Register"
-              )}
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild className="w-full">
+                <Button disabled={loading} className="w-full" type="button">
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Register"
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Apakah kamu yakin?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Semua data yang kamu masukkan akan dikirim. Pastikan sudah
+                    benar.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={loading}>Batal</AlertDialogCancel>
+                  <AlertDialogAction asChild>
+                    <Button
+                      type="submit"
+                      form="courier-registration-form"
+                      disabled={loading}
+                    >
+                      Konfirmasi
+                    </Button>
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardFooter>
         </form>
       </Card>
