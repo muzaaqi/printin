@@ -27,7 +27,7 @@ const ServicesCards = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   }, []);
 
   return (
-    <div className="mx-auto flex flex-col justify-center px-4 pb-10 sm:px-6 md:grid md:grid-cols-2 lg:grid-cols-3 lg:px-8">
+    <div className="mx-auto flex flex-col justify-center px-4 pb-10 sm:px-6 md:grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 lg:px-8">
       {loading
         ? Array.from({ length: 10 }).map((_, i) => (
             <div
