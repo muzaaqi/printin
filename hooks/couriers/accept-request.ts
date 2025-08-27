@@ -3,11 +3,9 @@
 import { createSupabaseServerClient } from "@/utils/supabase/server-client";
 import { supabaseAdmin } from "@/utils/supabase/supabase-admin";
 
-const UpdateStatus = async (
-  supabase,
-  courierId: string,
-  status: string | null,
-) => {
+const supabase = await createSupabaseServerClient();
+
+const UpdateStatus = async (courierId: string, status: string | null) => {
   const { data, error } = await supabase
     .from("courier-requests")
     .update({ status, updated_at: new Date() })
@@ -27,8 +25,6 @@ const UpdateStatus = async (
 };
 
 export const acceptCourierRequest = async (courierId: string) => {
-  const supabase = await createSupabaseServerClient();
-
   const {
     data: { user },
     error: authError,
@@ -41,7 +37,7 @@ export const acceptCourierRequest = async (courierId: string) => {
     };
   }
 
-  const data = await UpdateStatus(supabase, courierId, "accepted");
+  const data = await UpdateStatus(courierId, "accepted");
 
   const admin = await supabaseAdmin();
   const { error: userError } = await admin.auth.admin.updateUserById(
@@ -57,19 +53,16 @@ export const acceptCourierRequest = async (courierId: string) => {
   );
 
   if (userError) {
-    await UpdateStatus(supabase, courierId, null);
+    await UpdateStatus(courierId, null);
     console.log(userError);
-    const { error } = await admin.auth.admin.updateUserById(
-      data.user_id,
-      {
-        email: data.email,
-        phone: data.phone,
-        user_metadata: {
-          full_name: data.full_name,
-          role: "user",
-        },
+    const { error } = await admin.auth.admin.updateUserById(data.user_id, {
+      email: data.email,
+      phone: data.phone,
+      user_metadata: {
+        full_name: data.full_name,
+        role: "user",
       },
-    );
+    });
     return {
       success: false,
       error: "Failed to update user",
