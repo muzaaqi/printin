@@ -1,5 +1,5 @@
-"use server"
-import { getCurrentUser } from "@/features/get-current-user";
+"use server";
+import { getCurrentUser } from "@/hooks/profile/get-current-user";
 import { ProfileSchema } from "@/lib/schema/profile";
 import { createSupabaseServerClient } from "@/utils/supabase/server-client";
 import { Profile } from "./types";
@@ -40,7 +40,9 @@ export const updateProfile = async (userData: ProfileSchema) => {
   }
 
   if (data.avatar_path) {
-    const { error: deleteError } = await supabase.storage.from("avatars").remove([data.avatar_path]);
+    const { error: deleteError } = await supabase.storage
+      .from("avatars")
+      .remove([data.avatar_path]);
     if (deleteError) {
       return {
         success: false,
@@ -77,17 +79,15 @@ export const updateProfile = async (userData: ProfileSchema) => {
     avatarFullPath = uploadData.path;
   }
 
-  const { error: authError } = await admin.auth.admin.updateUserById(
-    userId,
-    {
-      phone: userData.phone,
-      user_metadata: {
-        full_name: userData.full_name,
-        avatar_url: avatarUrl,
-        address: userData.address,
-      },
+  const { error: authError } = await admin.auth.admin.updateUserById(userId, {
+    phone: userData.phone,
+    user_metadata: {
+      display_name: userData.full_name,
+      full_name: userData.full_name,
+      avatar_url: avatarUrl,
+      address: userData.address,
     },
-  );
+  });
 
   if (authError) {
     return {

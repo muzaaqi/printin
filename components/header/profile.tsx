@@ -16,6 +16,7 @@ import Link from "next/link";
 import { Button } from "../ui/button";
 import { useRouter, usePathname } from "next/navigation";
 import { Skeleton } from "../ui/skeleton";
+import { GetCurrentUserRealtime } from "@/hooks/profile/get-current-user-realtime";
 
 const Profile = ({ initialUser }: { initialUser: User | null }) => {
   const [user, setUser] = useState<User | null>(initialUser);
@@ -33,6 +34,21 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
       setLoading(false);
     });
     return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    GetCurrentUserRealtime((user) => {
+      setUser(user);
+      setLoading(false);
+    }).then((unsub) => {
+      unsubscribe = unsub;
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   if (!mounted) return null;
@@ -55,8 +71,8 @@ const Profile = ({ initialUser }: { initialUser: User | null }) => {
             <DropdownMenu>
               <div className="flex items-center space-x-2 rounded-lg px-3 py-2">
                 <span className="text-md font-semibold md:text-lg">
-                  {user?.user_metadata?.display_name ||
-                    user?.user_metadata?.full_name ||
+                  {user?.user_metadata?.full_name ||
+                    user?.user_metadata?.display_name ||
                     "User"}
                 </span>
                 <DropdownMenuTrigger>
