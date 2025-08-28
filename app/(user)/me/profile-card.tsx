@@ -28,7 +28,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ProfileSchema, profileSchema } from "@/lib/schema/profile";
 import { Camera, Loader2 } from "lucide-react";
 import { updateProfile } from "@/hooks/profile/update-profile";
-import { cropToSquare } from "@/hooks/crop-avatar";
+import { cropToSquare } from "@/hooks/profile/crop-avatar";
 import { toast } from "sonner";
 
 const ProfileCard = ({ user }: { user: User | null }) => {

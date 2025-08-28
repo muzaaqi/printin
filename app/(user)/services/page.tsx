@@ -1,5 +1,5 @@
 import ServicesCards from "@/components/services/services-cards";
-import { getCurrentUser } from "@/features/get-current-user";
+import { getCurrentUser } from "@/hooks/profile/get-current-user";
 import React from "react";
 
 const ServicesPage = async () => {
@@ -7,7 +7,7 @@ const ServicesPage = async () => {
   return (
     <div className="w-full items-center justify-center">
       <div className="container mx-auto mt-5 lg:mt-10">
-        <div className="flex flex-col mx-auto w-full text-center justify-center">
+        <div className="mx-auto flex w-full flex-col justify-center text-center">
           <h1 className="text-3xl font-bold">Layanan</h1>
           <p>Pilih sesuai kebutuhan Anda!</p>
         </div>

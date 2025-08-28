@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Sidebar, { type SidebarUser } from "@/components/dashboard/sidebar";
-import { getCurrentUser } from "@/features/get-current-user";
+import { getCurrentUser } from "@/hooks/profile/get-current-user";
 
 export const metadata: Metadata = {
   title: "Ngeprint | Dashboard",
@@ -21,7 +21,7 @@ export default async function DashboardLayout({
         <Sidebar user={user} />
       </aside>
       {/* Konten kanan: ambil sisa lebar dan jadi area scroll */}
-      <main className="h-full min-w-0 flex-1 overflow-y-auto p-6 scrollbar-hide">
+      <main className="scrollbar-hide h-full min-w-0 flex-1 overflow-y-auto p-6">
         {children}
       </main>
     </div>

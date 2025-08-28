@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/features/get-current-user";
+import { getCurrentUser } from "@/hooks/profile/get-current-user";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import ProfileCard from "./profile-card";

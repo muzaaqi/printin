@@ -1,5 +1,5 @@
 import RegisterForm from "@/components/courier/register-form";
-import { getCurrentUser } from "@/features/get-current-user";
+import { getCurrentUser } from "@/hooks/profile/get-current-user";
 import React from "react";
 
 const CourierRegisterPage = async () => {

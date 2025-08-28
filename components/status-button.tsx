@@ -10,7 +10,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
-import { updateTransactionStatus } from "@/hooks/transaction-status-update";
+import { updateTransactionStatus } from "@/hooks/transactions/transaction-status-update";
 
 const StatusButton = ({
   transaction,
