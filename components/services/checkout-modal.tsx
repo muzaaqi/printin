@@ -53,6 +53,9 @@ import {
   Courier,
   GetAllCouriersRealtime,
 } from "@/features/get-all-couriers-realtime";
+import { GenerateQRIS } from "@/hooks/transactions/generate-qris";
+import { Textarea } from "../ui/textarea";
+import { Skeleton } from "../ui/skeleton";
 
 const ACCEPTED_MIME_TYPES = [
   "application/pdf",
@@ -70,6 +73,8 @@ interface CheckoutModalProps {
 
 const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
   const [qris, setQris] = useState(false);
+  const [qrImage, setQrImage] = useState<string | null | undefined>(null);
+  const [qrisLoading, setQrisLoading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [dateOpen, setDateOpen] = useState(false);
@@ -142,6 +147,25 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
 
   const handleClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handlePayment = async () => {
+    setQris(true);
+    if (!totalPrice) {
+      setQrImage("/qris.jpg");
+      return;
+    }
+    setQrisLoading(true);
+    const { status, emv, qrImage } = await GenerateQRIS({
+      amount: String(totalPrice),
+      withFee: false,
+      feeType: "r",
+      feeValue: "0",
+    });
+    if (status) {
+      setQrImage(qrImage);
+    }
+    setQrisLoading(false);
   };
 
   const onSubmit = async (data: CheckoutSchema) => {
@@ -267,6 +291,8 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
     } else {
       setTotalPrice(null);
     }
+    
+
   }, [pages, service.price, service.duplex]);
 
   if (!open) return null;
@@ -414,33 +440,50 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                 <div className="w-full grid-cols-2 gap-5 space-y-3 border-t pt-3 md:grid">
                   <div className="space-y-3">
                     <Label>Jumlah Halaman</Label>
-                    <Input
-                      {...form.register("pages", { valueAsNumber: true })}
-                      type="number"
-                      id="pages"
-                      min={1}
-                      max={service.paper?.sheets}
-                      onChange={(e) => {
-                        const value = Number(e.target.value);
-                        if (value > service.paper?.sheets) {
-                          form.setValue("pages", service.paper?.sheets, {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          });
-                        } else {
-                          form.setValue("pages", value, {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          });
+                    <div className="grid grid-cols-4 items-center gap-3">
+                      <Input
+                        {...form.register("pages", { valueAsNumber: true })}
+                        type="number"
+                        id="pages"
+                        min={1}
+                        max={
+                          service.duplex
+                            ? service.paper?.sheets * 2
+                            : service.paper?.sheets
                         }
-                      }}
-                      placeholder={`Tersisa ${service.paper?.sheets.toLocaleString()}`}
-                      className={`${
-                        form.formState.errors.pages
-                          ? "border-destructive focus:border-destructive"
-                          : ""
-                      }`}
-                    />
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+                          if (
+                            value >
+                            service.paper?.sheets * (service.duplex ? 2 : 1)
+                          ) {
+                            form.setValue(
+                              "pages",
+                              service.paper?.sheets * (service.duplex ? 2 : 1),
+                              {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              },
+                            );
+                          } else {
+                            form.setValue("pages", value, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }
+                        }}
+                        placeholder={`Maksimal ${service.duplex ? (service.paper?.sheets * 2).toLocaleString() : service.paper?.sheets.toLocaleString()}`}
+                        className={`col-span-3 ${
+                          form.formState.errors.pages &&
+                          "border-destructive focus:border-destructive"
+                        }`}
+                      />
+                      <span className="bg-accent text-accent-foreground rounded-md p-1.5 text-center font-semibold">
+                        {service.duplex
+                          ? (service.paper?.sheets * 2).toLocaleString()
+                          : service.paper?.sheets.toLocaleString()}
+                      </span>
+                    </div>
                     {form.formState.errors.pages && (
                       <span className="text-destructive text-sm">
                         {form.formState.errors.pages.message}
@@ -526,13 +569,13 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
               <div className="w-full">
                 <div className="space-y-3">
                   <Label htmlFor="notes">Catatan</Label>
-                  <textarea
+                  <Textarea
                     {...form.register("notes")}
                     name="notes"
                     id="notes"
                     className="dark:bg-input/20 focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border p-3 focus-visible:ring-[3px]"
                     rows={4}
-                  ></textarea>
+                  ></Textarea>
                   {form.formState.errors.notes && (
                     <span className="text-destructive">
                       {form.formState.errors.notes.message}
@@ -584,10 +627,13 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                       render={({ field, fieldState }) => (
                         <div className="space-y-2">
                           <Select
+                            disabled={totalPrice === 0 || !totalPrice}
                             value={field.value || ""} // Important: handle undefined
                             onValueChange={(value) => {
                               field.onChange(value as "Qris" | "Cash");
-                              setQris(value === "Qris");
+                              if (value === "Qris") {
+                                handlePayment();
+                              }
 
                               // Clear qris errors when switching to Cash
                               if (value === "Cash") {
@@ -663,13 +709,17 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
             <div className="relative space-y-3">
               {qris ? (
                 <div className="mx-auto flex items-center justify-center">
-                  <Image
-                    className="rounded-md border"
-                    src={"/qris.jpg"}
-                    alt="qris"
-                    width={300}
-                    height={300}
-                  />
+                  {qrisLoading ? (
+                    <Skeleton className="h-[300px] w-[300px] rounded-md" />
+                  ) : (
+                    <Image
+                      className="rounded-md border"
+                      src={qrImage || "/qris.jpg"}
+                      alt="qris"
+                      width={300}
+                      height={300}
+                    />
+                  )}
                 </div>
               ) : (
                 <div className="text-accent-foreground/90 border-pending-foreground/30 bg-pending-foreground/10 w-full overflow-auto rounded-md border px-4 py-3 lg:mb-0">
@@ -775,8 +825,12 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
               <Button
                 variant={"default"}
                 type="button"
-                disabled={service.paper?.sheets === 0 || isSubmitting}
-                className={`{${service.paper?.sheets === 0 ? "cursor-not-allowed" : isSubmitting ? "cursor-wait" : ""} w-full`}
+                disabled={
+                  service.paper?.sheets === 0 ||
+                  isSubmitting ||
+                  !form.formState.isValid
+                }
+                className={`{${service.paper?.sheets === 0 || !form.formState.isValid ? "cursor-not-allowed" : isSubmitting ? "cursor-wait" : ""} w-full`}
               >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -798,13 +852,12 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
               <AlertDialogFooter>
                 <AlertDialogCancel>Batal</AlertDialogCancel>
                 <AlertDialogAction asChild>
-                  <button
-                    type="submit"
+                  <Button
+                    type={`${!form.formState.isValid ? "button" : "submit"}`}
                     form="checkout-form"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
                   >
                     Konfirmasi
-                  </button>
+                  </Button>
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
