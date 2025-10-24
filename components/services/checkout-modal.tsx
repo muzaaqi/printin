@@ -74,6 +74,7 @@ interface CheckoutModalProps {
 const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
   const [qris, setQris] = useState(false);
   const [qrImage, setQrImage] = useState<string | null | undefined>(null);
+  const [genQris, setGenQris] = useState(false);
   const [qrisLoading, setQrisLoading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -149,13 +150,14 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
     fileInputRef.current?.click();
   };
 
-  const handlePayment = async () => {
+  const handleQrisPayment = async () => {
     setQris(true);
     if (!totalPrice) {
       setQrImage("/qris.jpg");
       return;
     }
     setQrisLoading(true);
+    setGenQris(false);
     const { status, emv, qrImage } = await GenerateQRIS({
       amount: String(totalPrice),
       withFee: false,
@@ -291,8 +293,6 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
     } else {
       setTotalPrice(null);
     }
-    
-
   }, [pages, service.price, service.duplex]);
 
   if (!open) return null;
@@ -453,6 +453,11 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                         }
                         onChange={(e) => {
                           const value = Number(e.target.value);
+
+                          if (qris) {
+                            setGenQris(true);
+                          }
+
                           if (
                             value >
                             service.paper?.sheets * (service.duplex ? 2 : 1)
@@ -463,7 +468,7 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                               {
                                 shouldDirty: true,
                                 shouldValidate: true,
-                              },
+                              }
                             );
                           } else {
                             form.setValue("pages", value, {
@@ -521,11 +526,11 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                                   const yyyy = d.getFullYear();
                                   const mm = String(d.getMonth() + 1).padStart(
                                     2,
-                                    "0",
+                                    "0"
                                   );
                                   const dd = String(d.getDate()).padStart(
                                     2,
-                                    "0",
+                                    "0"
                                   );
                                   const yyyyMmDd = `${yyyy}-${mm}-${dd}`;
                                   form.setValue("datePart", yyyyMmDd, {
@@ -632,11 +637,14 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
                             onValueChange={(value) => {
                               field.onChange(value as "Qris" | "Cash");
                               if (value === "Qris") {
-                                handlePayment();
+                                handleQrisPayment();
                               }
 
                               // Clear qris errors when switching to Cash
                               if (value === "Cash") {
+                                setQris(false);
+                                setQrImage(null);
+                                form.setValue("receipt", undefined);
                                 form.clearErrors("receipt");
                               }
 
@@ -708,12 +716,21 @@ const CheckoutModal = ({ service, open, onClose }: CheckoutModalProps) => {
             </div>
             <div className="relative space-y-3">
               {qris ? (
-                <div className="mx-auto flex items-center justify-center">
+                <div className="mx-auto flex relative items-center justify-center">
+                  {genQris && (
+                    <Button
+                      variant="outline"
+                      className="mb-3 absolute z-5"
+                      onClick={handleQrisPayment}
+                    >
+                      Generate QRIS
+                    </Button>
+                  )}
                   {qrisLoading ? (
                     <Skeleton className="h-[300px] w-[300px] rounded-md" />
                   ) : (
                     <Image
-                      className="rounded-md border"
+                      className={`rounded-md border ${genQris && "blur-md"}`}
                       src={qrImage || "/qris.jpg"}
                       alt="qris"
                       width={300}
